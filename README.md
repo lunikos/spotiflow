@@ -71,7 +71,9 @@ Run it again after each Spotify update, with `uninstall` in place of `install` t
    so that's copied out first.
 3. Apply the patches that match your version, OS and CPU. On Windows, also patch `Spotify.dll`
    and strip the signatures SpotX strips from `Spotify.exe` and `chrome_elf.dll`.
-4. Add the theme stylesheet, repack, and re-sign the app on macOS.
+4. Add a small script that pauses Spotify's scroll-linked animations when nothing scrolls. They
+   otherwise keep the compositor drawing every frame (about 30% CPU while idle).
+5. Add the theme stylesheet, repack, and re-sign the app on macOS.
 
 The patch records keep SpotX-Bash's format and Perl regex syntax. A small translator turns them
 into Rust regexes, and `tests/parity.rs` checks the output is byte-for-byte what Perl produces on
