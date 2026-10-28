@@ -69,6 +69,6 @@ pub fn apply(bytes: &mut Vec<u8>, ver: Ver, premium: bool, block_updates: bool) 
             missed.push(e.name);
         }
     }
-    *bytes = unlatin1(&text);
+    *bytes = unlatin1(&text)?;
     Ok(missed)
 }
