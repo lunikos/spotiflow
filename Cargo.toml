@@ -1,0 +1,19 @@
+[package]
+name = "spotiflow"
+version = "0.1.0"
+edition = "2021"
+description = "Patch the Spotify desktop client (SpotX patch set) and apply a light theme"
+license = "MIT"
+
+[dependencies]
+fancy-regex = "0.14"
+regex-automata = { version = "0.4", default-features = false, features = ["std", "syntax", "meta", "perf", "unicode"] }
+regex-syntax = { version = "0.8", default-features = false, features = ["std", "unicode"] }
+zip = { version = "2", default-features = false, features = ["deflate"] }
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
