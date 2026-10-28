@@ -10,18 +10,15 @@
 
 ## Get started
 
-You need one file: `spotiflow.cmd`. It works on every platform.
+Download [`spotiflow.cmd`](spotiflow.cmd), then:
 
 ```sh
 sh spotiflow.cmd install        # macOS, Linux
 spotiflow.cmd install           # Windows
 ```
 
-Start Spotify and you're done. After Spotify updates itself, run `install` again.
-
-The first run fetches the right prebuilt binary through the [GitHub CLI](https://cli.github.com)
-(run `gh auth login` once first). If you've cloned the repo and have [Rust](https://rustup.rs),
-it builds from source instead.
+Re-run `install` after each Spotify update. Inside a clone with [Rust](https://rustup.rs)
+installed, it builds from source instead of downloading a release.
 
 <details>
 <summary><b>Supported installs</b></summary>
@@ -62,15 +59,9 @@ it builds from source instead.
 
 ## Staying up to date
 
-SpotX changes often. spotiflow keeps up in two ways:
-
-- **`spotiflow update`** fetches the newest patch set from SpotX-Bash. It records the exact
-  commit and only keeps the update if every pattern compiles.
-- **A weekly GitHub Action** does the same for the repo and opens a pull request with the tests
-  already run.
-
-Patches inject code into Spotify. Updating trusts upstream SpotX exactly as much as running SpotX
-would.
+- `spotiflow update` pulls the newest SpotX-Bash patch set and keeps it only if every pattern
+  compiles. It trusts upstream SpotX as much as running SpotX would.
+- A weekly workflow does the same for this repo and opens a pull request.
 
 <details>
 <summary><b>How it works</b></summary>
