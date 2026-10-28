@@ -6,8 +6,7 @@
 :;   os=$(uname -s | sed 's/Darwin/macos/;s/Linux/linux/'); arch=$(uname -m | sed 's/aarch64/arm64/;s/amd64/x86_64/')
 :;   dir=${XDG_CACHE_HOME:-$HOME/.cache}/spotiflow; bin="$dir/spotiflow"; mkdir -p "$dir"
 :;   if [ ! -x "$bin" ]; then
-:;     command -v gh >/dev/null || { echo "Install the GitHub CLI (gh) and run 'gh auth login', or install Rust: https://rustup.rs" >&2; exit 1; }
-:;     gh release download -R "$repo" -p "spotiflow-$os-$arch" -O "$bin" --clobber && chmod +x "$bin"
+:;     curl -fsSL -o "$bin" "https://github.com/$repo/releases/latest/download/spotiflow-$os-$arch" && chmod +x "$bin"
 :;   fi
 :; fi
 :; exec "$bin" "$@"
@@ -26,8 +25,7 @@ set "arch=x86_64"
 if /i "%PROCESSOR_ARCHITECTURE%"=="ARM64" set "arch=arm64"
 set "bin=%LOCALAPPDATA%\spotiflow\spotiflow.exe"
 if not exist "%bin%" (
-  where gh >nul 2>nul || (echo Install the GitHub CLI ^(gh^) and run "gh auth login", or install Rust: https://rustup.rs & exit /b 1)
   mkdir "%LOCALAPPDATA%\spotiflow" 2>nul
-  gh release download -R %repo% -p "spotiflow-windows-%arch%.exe" -O "%bin%" --clobber || exit /b 1
+  curl.exe -fsSL -o "%bin%" "https://github.com/%repo%/releases/latest/download/spotiflow-windows-%arch%.exe" || exit /b 1
 )
 "%bin%" %*
