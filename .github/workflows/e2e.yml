@@ -1,0 +1,55 @@
+name: e2e
+on:
+  push:
+    tags: ["v*"]
+  schedule:
+    - cron: "0 7 * * 1"
+  workflow_dispatch:
+
+jobs:
+  spotify:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - run: cargo build --release
+      - name: Install a clean Spotify and patch it
+        run: |
+          bin=target/release/spotiflow
+          if [ "$RUNNER_OS" = Linux ]; then
+            deb=$(curl -fsSL http://repository.spotify.com/pool/non-free/s/spotify-client/ | grep -oE 'spotify-client_[^"<]+_amd64\.deb' | sort -V | tail -1)
+            curl -fsSL -o spotify.deb "http://repository.spotify.com/pool/non-free/s/spotify-client/$deb"
+            sudo apt-get update && sudo apt-get install -y ./spotify.deb xvfb
+            sudo $bin install
+          else
+            $bin reinstall
+          fi
+      - name: Check status
+        run: |
+          s=$(target/release/spotiflow status)
+          echo "$s"
+          for want in "patched  yes" "theme    yes" "backup   yes"; do grep -q "$want" <<<"$s"; done
+      - name: Spotify starts and loads the patched UI
+        run: |
+          case "$RUNNER_OS" in
+            macOS) /Applications/Spotify.app/Contents/MacOS/Spotify --remote-debugging-port=9222 & ;;
+            Linux) xvfb-run -a /usr/share/spotify/spotify --no-sandbox --remote-debugging-port=9222 & ;;
+            Windows) "$APPDATA/Spotify/Spotify.exe" --remote-debugging-port=9222 & ;;
+          esac
+          for i in $(seq 1 30); do
+            curl -fs localhost:9222/json | grep -q 'xpui.app.spotify.com' && { echo "UI loaded"; exit 0; }
+            sleep 3
+          done
+          echo "Spotify didn't load its UI" >&2
+          exit 1
+      - name: Uninstall
+        run: |
+          sudo=; [ "$RUNNER_OS" = Linux ] && sudo=sudo
+          $sudo target/release/spotiflow uninstall
+          target/release/spotiflow status | grep -q "patched  no"
