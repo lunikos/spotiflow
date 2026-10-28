@@ -2,7 +2,7 @@
 name = "spotiflow"
 version = "0.1.0"
 edition = "2021"
-description = "SpotX patches for the Spotify desktop app"
+description = "Ad-free, decluttered and lighter Spotify desktop app"
 license = "MIT"
 
 [dependencies]
