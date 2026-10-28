@@ -1,0 +1,7 @@
+#global-nav-bar button:is([aria-label="What's New"], [aria-label="Listening activity"], [aria-label="Browse"]),
+#global-nav-bar kbd,
+#global-nav-bar span:has(> kbd),
+#main-view [data-testid="home-ads-container"],
+#Desktop_PanelContainer_Id div:has(> div > div > div > [aria-label="Related music videos"]) {
+  display: none !important;
+}
