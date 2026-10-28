@@ -4,11 +4,6 @@ use super::pe::*;
 use super::Loc;
 use crate::Result;
 
-fn hex(s: &str) -> Vec<u8> {
-    s.split_whitespace()
-        .map(|h| u8::from_str_radix(h, 16).unwrap())
-        .collect()
-}
 fn mask_of(len: usize, zero_spans: &[(usize, usize)]) -> Vec<u8> {
     let mut m = vec![0xFFu8; len];
     for &(start, n) in zero_spans {
@@ -72,12 +67,6 @@ fn field_next(b: &[u8], off: i64, kind: Field) -> Result<i64> {
         return Ok(off + 6);
     }
     Err("Unexpected block_slots field instruction".into())
-}
-
-fn dedup(mut v: Vec<i64>) -> Vec<i64> {
-    v.sort_unstable();
-    v.dedup();
-    v
 }
 
 pub fn reset_dll_sign(bytes: &[u8], pe: &Pe) -> Result<Vec<Loc>> {

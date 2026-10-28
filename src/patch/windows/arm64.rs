@@ -150,12 +150,6 @@ pub fn reset_dll_sign(bytes: &[u8], pe: &Pe) -> Result<Vec<Loc>> {
     Ok(vec![loc])
 }
 
-fn dedup(mut v: Vec<i64>) -> Vec<i64> {
-    v.sort_unstable();
-    v.dedup();
-    v
-}
-
 fn mapper_enum_value(
     bytes: &[u8],
     pe: &Pe,
@@ -685,10 +679,4 @@ pub fn list_player(bytes: &[u8], pe: &Pe) -> Result<Vec<Loc>> {
         .into());
     }
     Ok(candidates.into_values().collect())
-}
-
-fn hex(s: &str) -> Vec<u8> {
-    s.split_whitespace()
-        .map(|h| u8::from_str_radix(h, 16).unwrap())
-        .collect()
 }

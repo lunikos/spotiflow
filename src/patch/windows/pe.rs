@@ -485,3 +485,15 @@ pub fn func_range(bytes: &[u8], pe: &Pe, rva: i64) -> Option<(i64, i64)> {
         ),
     }
 }
+
+pub fn hex(s: &str) -> Vec<u8> {
+    s.split_whitespace()
+        .map(|h| u8::from_str_radix(h, 16).expect("hex literal in source"))
+        .collect()
+}
+
+pub fn dedup(mut v: Vec<i64>) -> Vec<i64> {
+    v.sort_unstable();
+    v.dedup();
+    v
+}
