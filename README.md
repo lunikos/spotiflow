@@ -10,16 +10,12 @@
 
 ## Get started
 
-macOS, Linux (add `sudo` before `sh` on Linux):
-
 ```sh
-curl -fsSL https://raw.githubusercontent.com/lunikos/spotiflow/main/spotiflow.cmd | sh -s install
+curl -fsSL github.com/lunikos/spotiflow/raw/main/spotiflow.cmd | sh -s install   # macOS, Linux (sudo sh)
 ```
 
-Windows (PowerShell):
-
 ```powershell
-curl.exe -fsSLo "$env:TEMP\spotiflow.cmd" https://raw.githubusercontent.com/lunikos/spotiflow/main/spotiflow.cmd; & "$env:TEMP\spotiflow.cmd" install
+curl.exe -fsSLO github.com/lunikos/spotiflow/raw/main/spotiflow.cmd; .\spotiflow.cmd install   # Windows
 ```
 
 Run it again after each Spotify update, with `uninstall` in place of `install` to undo.
