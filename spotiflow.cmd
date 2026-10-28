@@ -26,6 +26,6 @@ if /i "%PROCESSOR_ARCHITECTURE%"=="ARM64" set "arch=arm64"
 set "bin=%LOCALAPPDATA%\spotiflow\spotiflow.exe"
 if not exist "%bin%" (
   mkdir "%LOCALAPPDATA%\spotiflow" 2>nul
-  curl.exe -fsSL -o "%bin%" "https://github.com/%repo%/releases/latest/download/spotiflow-windows-%arch%.exe" || exit /b 1
+  curl.exe -fsSL -o "%bin%.part" "https://github.com/%repo%/releases/latest/download/spotiflow-windows-%arch%.exe" && move /y "%bin%.part" "%bin%" >nul || exit /b 1
 )
 "%bin%" %*
