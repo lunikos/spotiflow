@@ -8,7 +8,12 @@ pub fn read_inst(b: &[u8], off: i64) -> Result<u32> {
     if off < 0 || off as usize + 4 > b.len() || off % 4 != 0 {
         return Err("ARM64 instruction is outside the file or unaligned".into());
     }
-    Ok(u32::from_le_bytes([b[off as usize], b[off as usize + 1], b[off as usize + 2], b[off as usize + 3]]))
+    Ok(u32::from_le_bytes([
+        b[off as usize],
+        b[off as usize + 1],
+        b[off as usize + 2],
+        b[off as usize + 3],
+    ]))
 }
 
 fn signed_imm(value: i64, bits: u32) -> i64 {
@@ -84,16 +89,28 @@ pub fn adrp_page_rva(ownerpage: u32, inst_rva: i64) -> i64 {
 // --- reset_dll_sign (ARM64 half) ---
 pub fn reset_dll_sign(bytes: &[u8], pe: &Pe) -> Result<Vec<Loc>> {
     pe.context()?;
-    let (_, anchor_rva) = unique_anchor(bytes, pe, "Check failed: sep_pos != std::wstring::npos.", false)?;
-    let refs: Vec<i64> =
-        dedup(find_xref_arm64(bytes, anchor_rva as u64, pe.code.vaddr, pe.code.rptr as u32, pe.code.rsize as u32));
+    let (_, anchor_rva) = unique_anchor(
+        bytes,
+        pe,
+        "Check failed: sep_pos != std::wstring::npos.",
+        false,
+    )?;
+    let refs: Vec<i64> = dedup(find_xref_arm64(
+        bytes,
+        anchor_rva as u64,
+        pe.code.vaddr,
+        pe.code.rptr as u32,
+        pe.code.rsize as u32,
+    ));
     let patched = vec![0x20, 0x00, 0x80, 0x52, 0xC0, 0x03, 0x5F, 0xD6];
     if refs.is_empty() {
         return Err("reset_dll_sign code reference was not found".into());
     }
     let mut funcs: Vec<(i64, i64)> = Vec::new();
     for r in refs {
-        let Some(rva) = pe.rva_from_off(r) else { continue };
+        let Some(rva) = pe.rva_from_off(r) else {
+            continue;
+        };
         if let Some(range) = func_range(bytes, pe, rva) {
             if !funcs.iter().any(|f| f.0 == range.0) {
                 funcs.push(range);
@@ -101,23 +118,37 @@ pub fn reset_dll_sign(bytes: &[u8], pe: &Pe) -> Result<Vec<Loc>> {
         }
     }
     if funcs.len() != 1 {
-        return Err(format!("Expected one reset_dll_sign function, found {}", funcs.len()).into());
+        return Err(format!(
+            "Expected one reset_dll_sign function, found {}",
+            funcs.len()
+        )
+        .into());
     }
     let start = funcs[0].0;
     let end = funcs[0].1;
-    let off = pe.off_from_rva(start).ok_or("reset_dll_sign patch range is invalid")?;
+    let off = pe
+        .off_from_rva(start)
+        .ok_or("reset_dll_sign patch range is invalid")?;
     if end - start < patched.len() as i64 || off + patched.len() as i64 > bytes.len() as i64 {
         return Err("reset_dll_sign patch range is invalid".into());
     }
     let loc = if match_bytes(bytes, off, &patched) {
-        Loc { patch_off: off, original: None, patched }
+        Loc {
+            patch_off: off,
+            original: None,
+            patched,
+        }
     } else {
         let prologue = read_inst(bytes, off)?;
         if prologue & 0xFF00FFFF != 0xA9007BFD {
             return Err("Unexpected ARM64 reset_dll_sign function prologue".into());
         }
         let orig = bytes[off as usize..off as usize + patched.len()].to_vec();
-        Loc { patch_off: off, original: Some(orig), patched }
+        Loc {
+            patch_off: off,
+            original: Some(orig),
+            patched,
+        }
     };
     Ok(vec![loc])
 }
@@ -129,8 +160,16 @@ fn dedup(mut v: Vec<i64>) -> Vec<i64> {
 }
 
 // --- block_slots (ARM64) ---
-fn mapper_enum_value(bytes: &[u8], pe: &Pe, start_rva: i64, end_rva: i64, refs: &[i64]) -> Result<u32> {
-    let mapper_off = pe.off_from_rva(start_rva).ok_or("slot_is_disabled mapper offset was not found")?;
+fn mapper_enum_value(
+    bytes: &[u8],
+    pe: &Pe,
+    start_rva: i64,
+    end_rva: i64,
+    refs: &[i64],
+) -> Result<u32> {
+    let mapper_off = pe
+        .off_from_rva(start_rva)
+        .ok_or("slot_is_disabled mapper offset was not found")?;
     let mapper_end = mapper_off + (end_rva - start_rva);
     if mapper_end <= mapper_off || mapper_end > bytes.len() as i64 {
         return Err("slot_is_disabled mapper range is invalid".into());
@@ -164,7 +203,11 @@ fn mapper_enum_value(bytes: &[u8], pe: &Pe, start_rva: i64, end_rva: i64, refs: 
         off += 4;
     }
     if dispatchers.len() != 1 {
-        return Err(format!("Expected one ARM64 slot mapper dispatcher, found {}", dispatchers.len()).into());
+        return Err(format!(
+            "Expected one ARM64 slot mapper dispatcher, found {}",
+            dispatchers.len()
+        )
+        .into());
     }
     let (enum_limit, table_rva, base_rva) = dispatchers[0];
     let mut anchor_rvas = std::collections::HashSet::new();
@@ -173,10 +216,18 @@ fn mapper_enum_value(bytes: &[u8], pe: &Pe, start_rva: i64, end_rva: i64, refs: 
             anchor_rvas.insert(rva);
         }
     }
-    let table_off = pe.off_from_rva(table_rva).ok_or("slot_is_disabled jump table offset was not found")?;
-    let table_section = pe.sections.iter().find(|s| table_rva >= s.vaddr && table_rva < s.vaddr + s.rsize);
+    let table_off = pe
+        .off_from_rva(table_rva)
+        .ok_or("slot_is_disabled jump table offset was not found")?;
+    let table_section = pe
+        .sections
+        .iter()
+        .find(|s| table_rva >= s.vaddr && table_rva < s.vaddr + s.rsize);
     let table_end = table_off + (enum_limit + 1) * 4;
-    let ok = table_section.map(|s| table_end <= s.rptr + s.rsize).unwrap_or(false) && table_end <= bytes.len() as i64;
+    let ok = table_section
+        .map(|s| table_end <= s.rptr + s.rsize)
+        .unwrap_or(false)
+        && table_end <= bytes.len() as i64;
     if !ok {
         return Err("slot_is_disabled jump table range is invalid".into());
     }
@@ -190,7 +241,11 @@ fn mapper_enum_value(bytes: &[u8], pe: &Pe, start_rva: i64, end_rva: i64, refs: 
         }
     }
     if found.len() != 1 {
-        return Err(format!("Expected one ARM64 slot_is_disabled enum value, found {}", found.len()).into());
+        return Err(format!(
+            "Expected one ARM64 slot_is_disabled enum value, found {}",
+            found.len()
+        )
+        .into());
     }
     Ok(found[0])
 }
@@ -256,7 +311,11 @@ fn block_slots_predicate(bytes: &[u8], pe: &Pe, target_rva: i64) -> Option<Loc> 
             return Ok(None);
         }
         let _ = return_false_off;
-        Ok(Some(Loc { patch_off, original: if patched_state { None } else { Some(original) }, patched }))
+        Ok(Some(Loc {
+            patch_off,
+            original: if patched_state { None } else { Some(original) },
+            patched,
+        }))
     })()
     .ok()
     .flatten()
@@ -265,15 +324,24 @@ fn block_slots_predicate(bytes: &[u8], pe: &Pe, target_rva: i64) -> Option<Loc> 
 pub fn block_slots(bytes: &[u8], pe: &Pe) -> Result<Vec<Loc>> {
     pe.context()?;
     let (_, anchor_rva) = unique_anchor(bytes, pe, "slot_is_disabled", true)?;
-    let refs =
-        dedup(find_xref_arm64(bytes, anchor_rva as u64, pe.code.vaddr, pe.code.rptr as u32, pe.code.rsize as u32));
+    let refs = dedup(find_xref_arm64(
+        bytes,
+        anchor_rva as u64,
+        pe.code.vaddr,
+        pe.code.rptr as u32,
+        pe.code.rsize as u32,
+    ));
     if refs.is_empty() {
         return Err("slot_is_disabled ARM64 code reference was not found".into());
     }
     let mut mappers: Vec<(i64, i64)> = Vec::new();
     for &r in &refs {
-        let Some(rva) = pe.rva_from_off(r) else { continue };
-        let Some(range) = func_range(bytes, pe, rva) else { continue };
+        let Some(rva) = pe.rva_from_off(r) else {
+            continue;
+        };
+        let Some(range) = func_range(bytes, pe, rva) else {
+            continue;
+        };
         let size = range.1 - range.0;
         if !(0x100..=0x4000).contains(&size) {
             continue;
@@ -283,15 +351,23 @@ pub fn block_slots(bytes: &[u8], pe: &Pe) -> Result<Vec<Loc>> {
         }
     }
     if mappers.len() != 1 {
-        return Err(format!("Expected one ARM64 slot mapper function, found {}", mappers.len()).into());
+        return Err(format!(
+            "Expected one ARM64 slot mapper function, found {}",
+            mappers.len()
+        )
+        .into());
     }
     let enum_value = mapper_enum_value(bytes, pe, mappers[0].0, mappers[0].1, &refs)?;
     let callers = find_arm64_block_slots_callers(bytes, pe.code.rptr, pe.code.rsize, enum_value);
     let mut targets: std::collections::HashMap<i64, Loc> = std::collections::HashMap::new();
     for co in callers {
         let res: Result<()> = (|| {
-            let Some(crva) = pe.rva_from_off(co) else { return Ok(()) };
-            let Some(crange) = func_range(bytes, pe, crva) else { return Ok(()) };
+            let Some(crva) = pe.rva_from_off(co) else {
+                return Ok(());
+            };
+            let Some(crange) = func_range(bytes, pe, crva) else {
+                return Ok(());
+            };
             if crva + 12 > crange.1 {
                 return Ok(());
             }
@@ -310,7 +386,11 @@ pub fn block_slots(bytes: &[u8], pe: &Pe) -> Result<Vec<Loc>> {
         let _ = res;
     }
     if targets.len() != 1 {
-        return Err(format!("Expected one ARM64 block_slots semantic function, found {}", targets.len()).into());
+        return Err(format!(
+            "Expected one ARM64 block_slots semantic function, found {}",
+            targets.len()
+        )
+        .into());
     }
     Ok(targets.into_values().collect())
 }
@@ -319,14 +399,22 @@ pub fn block_slots(bytes: &[u8], pe: &Pe) -> Result<Vec<Loc>> {
 pub fn crossfade(bytes: &[u8], pe: &Pe) -> Result<Vec<Loc>> {
     pe.context()?;
     let (_, anchor_rva) = unique_anchor(bytes, pe, "crossfade_enabled", true)?;
-    let refs =
-        dedup(find_xref_arm64(bytes, anchor_rva as u64, pe.code.vaddr, pe.code.rptr as u32, pe.code.rsize as u32));
+    let refs = dedup(find_xref_arm64(
+        bytes,
+        anchor_rva as u64,
+        pe.code.vaddr,
+        pe.code.rptr as u32,
+        pe.code.rsize as u32,
+    ));
     if refs.is_empty() {
         return Err("No ARM64 code reference to crossfade_enabled was found".into());
     }
-    let mut ref_funcs: std::collections::HashMap<i64, (i64, i64)> = std::collections::HashMap::new();
+    let mut ref_funcs: std::collections::HashMap<i64, (i64, i64)> =
+        std::collections::HashMap::new();
     for &r in &refs {
-        let Some(rva) = pe.rva_from_off(r) else { continue };
+        let Some(rva) = pe.rva_from_off(r) else {
+            continue;
+        };
         if let Some(range) = func_range(bytes, pe, rva) {
             ref_funcs.insert(r, range);
         }
@@ -335,7 +423,9 @@ pub fn crossfade(bytes: &[u8], pe: &Pe) -> Result<Vec<Loc>> {
     let mut candidates: std::collections::HashMap<i64, Loc> = std::collections::HashMap::new();
     for &r in &refs {
         let res: Result<()> = (|| {
-            let Some(&function) = ref_funcs.get(&r) else { return Ok(()) };
+            let Some(&function) = ref_funcs.get(&r) else {
+                return Ok(());
+            };
             let add_off = r + 4;
             let add_anchor = read_inst(bytes, add_off)?;
             if add_anchor & 0xFFC0001F != 0x91000003 {
@@ -382,7 +472,9 @@ pub fn crossfade(bytes: &[u8], pe: &Pe) -> Result<Vec<Loc>> {
             {
                 return Ok(());
             }
-            let Some(patch_rva) = pe.rva_from_off(patch_off) else { return Ok(()) };
+            let Some(patch_rva) = pe.rva_from_off(patch_off) else {
+                return Ok(());
+            };
             if patch_rva < function.0 || patch_rva + result_off - patch_off + 4 > function.1 {
                 return Ok(());
             }
@@ -407,7 +499,11 @@ pub fn crossfade(bytes: &[u8], pe: &Pe) -> Result<Vec<Loc>> {
         let _ = res;
     }
     if candidates.len() != 1 {
-        return Err(format!("Expected one ARM64 crossfade boolean call site, found {}", candidates.len()).into());
+        return Err(format!(
+            "Expected one ARM64 crossfade boolean call site, found {}",
+            candidates.len()
+        )
+        .into());
     }
     Ok(candidates.into_values().collect())
 }
@@ -416,7 +512,13 @@ pub fn crossfade(bytes: &[u8], pe: &Pe) -> Result<Vec<Loc>> {
 pub fn list_player(bytes: &[u8], pe: &Pe) -> Result<Vec<Loc>> {
     pe.context()?;
     let (_, anchor_rva) = unique_anchor(bytes, pe, "enable_list_player", true)?;
-    let refs = find_xref_arm64(bytes, anchor_rva as u64, pe.code.vaddr, pe.code.rptr as u32, pe.code.rsize as u32);
+    let refs = find_xref_arm64(
+        bytes,
+        anchor_rva as u64,
+        pe.code.vaddr,
+        pe.code.rptr as u32,
+        pe.code.rsize as u32,
+    );
     let owner_bytes = b"core-list-player\0";
     let patched = vec![0x00, 0x00, 0x80, 0x52];
     let optional_bool = hex("80 02 3F D6 08 04 40 39 48 00 00 34 13 00 40 39");
@@ -430,8 +532,12 @@ pub fn list_player(bytes: &[u8], pe: &Pe) -> Result<Vec<Loc>> {
             continue;
         }
         let res: Result<()> = (|| {
-            let Some(refrva) = pe.rva_from_off(reference) else { return Ok(()) };
-            let Some(range) = func_range(bytes, pe, refrva) else { return Ok(()) };
+            let Some(refrva) = pe.rva_from_off(reference) else {
+                return Ok(());
+            };
+            let Some(range) = func_range(bytes, pe, refrva) else {
+                return Ok(());
+            };
             if refrva + 0x44 > range.1 {
                 return Ok(());
             }
@@ -449,8 +555,11 @@ pub fn list_player(bytes: &[u8], pe: &Pe) -> Result<Vec<Loc>> {
                 {
                     continue;
                 }
-                let owner_rva = adrp_page_rva(owner_page, refrva + distance) + ((owner_add >> 10) & 0xFFF) as i64;
-                let Some(owner_off) = pe.off_from_rva(owner_rva) else { continue };
+                let owner_rva = adrp_page_rva(owner_page, refrva + distance)
+                    + ((owner_add >> 10) & 0xFFF) as i64;
+                let Some(owner_off) = pe.off_from_rva(owner_rva) else {
+                    continue;
+                };
                 if !match_bytes(bytes, owner_off, owner_bytes) {
                     continue;
                 }
@@ -461,11 +570,14 @@ pub fn list_player(bytes: &[u8], pe: &Pe) -> Result<Vec<Loc>> {
                 }
                 let key_len_call = read_inst(bytes, owner_ref - 8)?;
                 let owner_len_call = read_inst(bytes, owner_ref + 8)?;
-                if key_len_call & 0xFC000000 != 0x94000000 || owner_len_call & 0xFC000000 != 0x94000000 {
+                if key_len_call & 0xFC000000 != 0x94000000
+                    || owner_len_call & 0xFC000000 != 0x94000000
+                {
                     continue;
                 }
                 let key_len_target = branch_target(key_len_call, refrva + distance - 8, BKind::Bl)?;
-                let owner_len_target = branch_target(owner_len_call, refrva + distance + 8, BKind::Bl)?;
+                let owner_len_target =
+                    branch_target(owner_len_call, refrva + distance + 8, BKind::Bl)?;
                 if key_len_target != owner_len_target {
                     continue;
                 }
@@ -526,11 +638,15 @@ pub fn list_player(bytes: &[u8], pe: &Pe) -> Result<Vec<Loc>> {
                     patched_state = true;
                 } else if instruction & 0xFC000000 == 0x94000000 {
                     let target = branch_target(instruction, patch_rva, BKind::Bl)?;
-                    let Some(trange) = func_range(bytes, pe, target) else { continue };
+                    let Some(trange) = func_range(bytes, pe, target) else {
+                        continue;
+                    };
                     if trange.0 != target {
                         continue;
                     }
-                    let Some(tgt) = pe.off_from_rva(target) else { continue };
+                    let Some(tgt) = pe.off_from_rva(target) else {
+                        continue;
+                    };
                     let end = tgt + trange.1 - target;
                     let opt = find_bytes(bytes, &optional_bool, tgt);
                     let ret = find_bytes(bytes, &return_bool, tgt);
@@ -578,5 +694,7 @@ pub fn list_player(bytes: &[u8], pe: &Pe) -> Result<Vec<Loc>> {
 }
 
 fn hex(s: &str) -> Vec<u8> {
-    s.split_whitespace().map(|h| u8::from_str_radix(h, 16).unwrap()).collect()
+    s.split_whitespace()
+        .map(|h| u8::from_str_radix(h, 16).unwrap())
+        .collect()
 }

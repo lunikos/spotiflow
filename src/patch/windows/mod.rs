@@ -32,7 +32,10 @@ fn apply_locs(bytes: &mut [u8], name: &str, mut locs: Vec<Loc>) -> Result<bool> 
     locs.sort_by_key(|l| l.patch_off);
     let mut prev_end = -1i64;
     for l in &locs {
-        if l.patched.is_empty() || l.patch_off < 0 || l.patch_off + l.patched.len() as i64 > bytes.len() as i64 {
+        if l.patched.is_empty()
+            || l.patch_off < 0
+            || l.patch_off + l.patched.len() as i64 > bytes.len() as i64
+        {
             return Err(format!("{name} patch range is invalid").into());
         }
         match &l.original {
@@ -98,7 +101,9 @@ fn run_pe(
     locate: impl Fn(&[u8], &Pe) -> Result<Vec<Loc>>,
     missed: &mut Vec<&'static str>,
 ) {
-    let out = Pe::parse(bytes).and_then(|pe| locate(bytes, &pe)).and_then(|locs| apply_locs(bytes, name, locs));
+    let out = Pe::parse(bytes)
+        .and_then(|pe| locate(bytes, &pe))
+        .and_then(|locs| apply_locs(bytes, name, locs));
     if out.is_err() {
         missed.push(name);
     }
@@ -106,7 +111,12 @@ fn run_pe(
 
 /// Patches Spotify.dll and strips signatures from the three PE files in place, like SpotX-Windows.
 /// Returns the names of patches that did not apply.
-pub fn patch_windows(root: &Path, ver: Ver, premium: bool, block_updates: bool) -> Result<Vec<&'static str>> {
+pub fn patch_windows(
+    root: &Path,
+    ver: Ver,
+    premium: bool,
+    block_updates: bool,
+) -> Result<Vec<&'static str>> {
     if ver < DLL_MIN {
         return Err(format!("Windows binary patches need Spotify >= {DLL_MIN}").into());
     }
@@ -135,7 +145,12 @@ pub fn patch_windows(root: &Path, ver: Ver, premium: bool, block_updates: bool) 
         run_pe(&mut bytes, "block_slots", block_slots, &mut missed);
     }
     if !premium && ver >= CROSSFADE_MIN {
-        run_pe(&mut bytes, "crossfade_enabled", |b, p| crossfade(b, p, ver), &mut missed);
+        run_pe(
+            &mut bytes,
+            "crossfade_enabled",
+            |b, p| crossfade(b, p, ver),
+            &mut missed,
+        );
     }
 
     fs::write(&dll, &bytes)?;

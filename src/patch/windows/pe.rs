@@ -102,7 +102,15 @@ impl Pe {
             break;
         }
 
-        Ok(Pe { arch, opt_off, data_dir_off, sections, code, exc_rawptr, exc_rawsize })
+        Ok(Pe {
+            arch,
+            opt_off,
+            data_dir_off,
+            sections,
+            code,
+            exc_rawptr,
+            exc_rawsize,
+        })
     }
 
     /// Get-PERvaFromOffset.
@@ -169,7 +177,10 @@ pub fn find_bytes(data: &[u8], pat: &[u8], start: i64) -> i64 {
     let start = start.max(0) as usize;
     let last = data.len().checked_sub(pat.len());
     let Some(last) = last else { return -1 };
-    (start..=last).find(|&i| &data[i..i + pat.len()] == pat).map(|i| i as i64).unwrap_or(-1)
+    (start..=last)
+        .find(|&i| &data[i..i + pat.len()] == pat)
+        .map(|i| i as i64)
+        .unwrap_or(-1)
 }
 
 pub fn match_bytes(data: &[u8], off: i64, pat: &[u8]) -> bool {
@@ -180,7 +191,8 @@ pub fn match_bytes(data: &[u8], off: i64, pat: &[u8]) -> bool {
 }
 
 pub fn match_masked(data: &[u8], off: i64, pat: &[u8], mask: &[u8]) -> bool {
-    if pat.is_empty() || pat.len() != mask.len() || off < 0 || off as usize + pat.len() > data.len() {
+    if pat.is_empty() || pat.len() != mask.len() || off < 0 || off as usize + pat.len() > data.len()
+    {
         return false;
     }
     let o = off as usize;
@@ -222,7 +234,13 @@ fn rva_to_off(rva: i64, pe: &Pe) -> i64 {
 }
 
 /// FindRipLeaRefs: `lea reg, [rip+disp]` targeting a given RVA, within the code section.
-pub fn find_rip_lea_refs(bytes: &[u8], start: i64, length: i64, target_rva: i64, pe: &Pe) -> Vec<i64> {
+pub fn find_rip_lea_refs(
+    bytes: &[u8],
+    start: i64,
+    length: i64,
+    target_rva: i64,
+    pe: &Pe,
+) -> Vec<i64> {
     let mut out = Vec::new();
     let start = start.max(0);
     let end = (bytes.len() as i64).min(start + length);
@@ -241,7 +259,13 @@ pub fn find_rip_lea_refs(bytes: &[u8], start: i64, length: i64, target_rva: i64,
 }
 
 /// FindXrefArm64: ADRP+ADD pair resolving to a given RVA.
-pub fn find_xref_arm64(bytes: &[u8], string_rva: u64, section_rva: i64, raw_ptr: u32, size: u32) -> Vec<i64> {
+pub fn find_xref_arm64(
+    bytes: &[u8],
+    string_rva: u64,
+    section_rva: i64,
+    raw_ptr: u32,
+    size: u32,
+) -> Vec<i64> {
     let mut out = Vec::new();
     let mut i: u32 = 0;
     while i < size {
@@ -380,7 +404,13 @@ pub fn find_arm64_function_range(
 }
 
 /// FindCrossfadeGateCallsToRva: `call rel32` to a target RVA immediately followed by a `mov [..], al`.
-pub fn find_gate_calls_to_rva(bytes: &[u8], start: i64, length: i64, target_rva: i64, pe: &Pe) -> Vec<i64> {
+pub fn find_gate_calls_to_rva(
+    bytes: &[u8],
+    start: i64,
+    length: i64,
+    target_rva: i64,
+    pe: &Pe,
+) -> Vec<i64> {
     let mut out = Vec::new();
     let start = start.max(0);
     let end = (bytes.len() as i64).min(start + length);
@@ -389,7 +419,8 @@ pub fn find_gate_calls_to_rva(bytes: &[u8], start: i64, length: i64, target_rva:
         let i = p as usize;
         if bytes[i] == 0xE8 {
             let next = off_to_rva(p + 5, pe);
-            if next >= 0 && next + i32le(bytes, i + 1) as i64 == target_rva && bytes[i + 5] == 0x88 {
+            if next >= 0 && next + i32le(bytes, i + 1) as i64 == target_rva && bytes[i + 5] == 0x88
+            {
                 out.push(p);
             }
         }
@@ -399,7 +430,12 @@ pub fn find_gate_calls_to_rva(bytes: &[u8], start: i64, length: i64, target_rva:
 }
 
 /// FindArm64BlockSlotsCallers: BL; TBNZ w0,#0; MOV w1,#enum.
-pub fn find_arm64_block_slots_callers(bytes: &[u8], start: i64, length: i64, enum_value: u32) -> Vec<i64> {
+pub fn find_arm64_block_slots_callers(
+    bytes: &[u8],
+    start: i64,
+    length: i64,
+    enum_value: u32,
+) -> Vec<i64> {
     let mut out = Vec::new();
     if enum_value > 0xFFFF {
         return out;
@@ -413,7 +449,10 @@ pub fn find_arm64_block_slots_callers(bytes: &[u8], start: i64, length: i64, enu
         let call = u32le(bytes, i);
         let branch = u32le(bytes, i + 4);
         let load = u32le(bytes, i + 8);
-        if (call & 0xFC000000) == 0x94000000 && (branch & 0xFFF8001F) == 0x37000000 && load == mov_enum {
+        if (call & 0xFC000000) == 0x94000000
+            && (branch & 0xFFF8001F) == 0x37000000
+            && load == mov_enum
+        {
             out.push(p);
         }
         p += 4;
@@ -422,7 +461,12 @@ pub fn find_arm64_block_slots_callers(bytes: &[u8], start: i64, length: i64, enu
 }
 
 /// ASCII anchor that must occur exactly once; returns (offset, rva).
-pub fn unique_anchor(bytes: &[u8], pe: &Pe, text: &str, null_terminated: bool) -> Result<(i64, i64)> {
+pub fn unique_anchor(
+    bytes: &[u8],
+    pe: &Pe,
+    text: &str,
+    null_terminated: bool,
+) -> Result<(i64, i64)> {
     let mut anchor = text.as_bytes().to_vec();
     if null_terminated {
         anchor.push(0);
@@ -431,7 +475,9 @@ pub fn unique_anchor(bytes: &[u8], pe: &Pe, text: &str, null_terminated: bool) -
     if off < 0 || find_bytes(bytes, &anchor, off + 1) >= 0 {
         return Err(format!("{text} anchor was not found uniquely").into());
     }
-    let rva = pe.rva_from_off(off).ok_or_else(|| format!("{text} anchor RVA was not found"))?;
+    let rva = pe
+        .rva_from_off(off)
+        .ok_or_else(|| format!("{text} anchor RVA was not found"))?;
     Ok((off, rva))
 }
 

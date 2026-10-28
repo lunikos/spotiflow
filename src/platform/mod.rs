@@ -94,7 +94,10 @@ impl Client {
     /// chrome_elf.dll too, and strips Spotify.exe's signature, so all three are preserved.
     pub fn bins(&self) -> Vec<PathBuf> {
         if self.os == Os::Windows {
-            ["Spotify.exe", "Spotify.dll", "chrome_elf.dll"].iter().map(|f| self.root.join(f)).collect()
+            ["Spotify.exe", "Spotify.dll", "chrome_elf.dll"]
+                .iter()
+                .map(|f| self.root.join(f))
+                .collect()
         } else {
             vec![self.bin.clone()]
         }

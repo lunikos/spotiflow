@@ -92,7 +92,11 @@ pub fn run(o: &Opts) -> Result<()> {
     if c.os == Os::Windows {
         let wm = patch::windows::patch_windows(&c.root, ver, o.premium, o.block_updates)?;
         if !wm.is_empty() {
-            warn(&format!("{} binary patches matched nothing: {}", wm.len(), wm.join(", ")));
+            warn(&format!(
+                "{} binary patches matched nothing: {}",
+                wm.len(),
+                wm.join(", ")
+            ));
         }
     }
     if let Some(mb) = o.cache_mb {

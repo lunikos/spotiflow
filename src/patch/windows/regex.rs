@@ -44,7 +44,12 @@ fn version_match(e: &Entry, ver: Ver) -> bool {
 }
 
 /// Applies matching patches in place; returns the names that matched nothing.
-pub fn apply(bytes: &mut Vec<u8>, ver: Ver, premium: bool, block_updates: bool) -> Result<Vec<&'static str>> {
+pub fn apply(
+    bytes: &mut Vec<u8>,
+    ver: Ver,
+    premium: bool,
+    block_updates: bool,
+) -> Result<Vec<&'static str>> {
     let mut text = latin1(bytes);
     let mut missed = Vec::new();
     for e in table() {
@@ -59,7 +64,9 @@ pub fn apply(bytes: &mut Vec<u8>, ver: Ver, premium: bool, block_updates: bool) 
         }
         // .NET `-replace` is global; reuse the translator's literal prefilter for speed.
         let mut hit = false;
-        for c in translate::compile(e.find, e.replace, "g").map_err(|err| format!("binary patch {}: {err}", e.name))? {
+        for c in translate::compile(e.find, e.replace, "g")
+            .map_err(|err| format!("binary patch {}: {err}", e.name))?
+        {
             if let Some(new) = c.replace(&text)? {
                 text = new;
                 hit = true;
