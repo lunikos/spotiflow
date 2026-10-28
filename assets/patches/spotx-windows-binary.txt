@@ -1,0 +1,7 @@
+name&match&replace&fr&to&kind
+block_update&(?<=desktop-update/.)2(/update)&7/update&1.1.59&&update
+block_slots&slots(?=.{3,8}(override_url|queued_ads))&slot}&1.1.59&1.2.93&
+block_slots_2&slots(?=.{25,35}state)&slot}&1.2.55&1.2.93&slots
+block_slots_3&\?(?=payload=)&}&1.2.55&1.2.93&slots
+block_gabo&gabo(?=.receiver-service)&dodo&1.1.59&1.2.73&
+block_gabo2&gabo(?=.receiver-service(?:/public|[^/]))&dodo&1.2.74&&
