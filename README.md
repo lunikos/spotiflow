@@ -5,18 +5,8 @@
 <h1 align="center">spotiflow</h1>
 
 <p align="center">
-  Spotify, without the ads and the clutter.<br>
-  One small tool for macOS, Linux and Windows.
+  <a href="https://github.com/SpotX-Official/SpotX">SpotX</a> patches for the Spotify desktop app on macOS, Linux and Windows.
 </p>
-
----
-
-spotiflow patches the Spotify desktop app so it plays without ads, then hides a few things you
-probably never click (What's New, Friend Activity, Related videos). Everything else looks and
-works like normal Spotify.
-
-It runs the same patches as [SpotX](https://github.com/SpotX-Official/SpotX), rewritten as one
-fast Rust binary. A full install takes about 7 seconds, and the binary is 1.5 MB.
 
 ## Get started
 
