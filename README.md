@@ -29,8 +29,15 @@ spotiflow.cmd install           # Windows
 
 Start Spotify and you're done. After Spotify updates itself, run `install` again.
 
-The first run fetches the right prebuilt binary through the [GitHub CLI](https://cli.github.com).
-If you've cloned the repo and have [Rust](https://rustup.rs), it builds from source instead.
+The first run fetches the right prebuilt binary through the [GitHub CLI](https://cli.github.com)
+(run `gh auth login` once first). If you've cloned the repo and have [Rust](https://rustup.rs),
+it builds from source instead.
+
+| Platform | Spotify it works with                                                         |
+| -------- | ----------------------------------------------------------------------------- |
+| macOS    | `/Applications/Spotify.app` or `~/Applications/Spotify.app`                   |
+| Windows  | The desktop installer's `%APPDATA%\Spotify` (not the Microsoft Store version) |
+| Linux    | The `.deb` or spotify-launcher install. Run with `sudo`. Flatpak and Snap are read-only, so they can't be patched |
 
 ## Commands
 
@@ -49,7 +56,7 @@ If you've cloned the repo and have [Rust](https://rustup.rs), it builds from sou
 | `--no-theme`      | Patch only (with `uninstall`: drop the theme) |
 | `--no-exp`        | Leave experimental features off               |
 | `--hide-podcasts` | Hide podcasts and audiobooks on Home          |
-| `--block-updates` | Stop Spotify updating itself (macOS)          |
+| `--block-updates` | Stop Spotify updating itself (macOS, Windows) |
 | `--cache-mb <N>`  | Cap Spotify's disk cache at N MB              |
 | `-P <path>`       | Point at a Spotify install it can't find      |
 
@@ -70,7 +77,8 @@ would.
 1. Find Spotify, close it, and back it up the first time (or restore that backup on later runs).
 2. Unpack `xpui.spa`, Spotify's web UI. Newer builds hide part of their code in the V8 snapshot,
    so that's copied out first.
-3. Apply the patches that match your version, OS and CPU. On Windows, also patch `Spotify.dll`.
+3. Apply the patches that match your version, OS and CPU. On Windows, also patch `Spotify.dll`
+   and strip the signatures SpotX strips from `Spotify.exe` and `chrome_elf.dll`.
 4. Add the theme stylesheet, repack, and re-sign the app on macOS.
 
 The patch records keep SpotX-Bash's format and Perl regex syntax. A small translator turns them
@@ -82,6 +90,7 @@ spotiflow.cmd        launcher for every platform
 src/
   commands/          install, theme, uninstall, reinstall, update, status
   patch/             patch table and the Perl-to-Rust translator
+    windows/         Spotify.dll patching for x64 and ARM64
   platform/          finding and handling Spotify on each OS
   bundle/            xpui.spa and the V8 snapshot
   upstream/          embedded and updated SpotX data
@@ -106,6 +115,23 @@ cargo test --release --test parity -- --ignored --nocapture
 ```
 
 `PARITY_OS` is `macOS`, `Linux` or `Windows`. Leave out `PARITY_BIN` to check only the UI patches.
+
+The Windows test checks the `Spotify.dll` patcher against hashes of SpotX's own output. Point it
+at folders holding untouched `Spotify.dll`, `Spotify.exe` and `chrome_elf.dll`:
+
+```sh
+SPOTIFLOW_WIN_X64=path/x64 SPOTIFLOW_WIN_ARM64=path/arm64 \
+cargo test --release --test windows -- --ignored
+```
+
+GitHub Actions run the rest:
+
+| Workflow  | When                         | What                                                           |
+| --------- | ---------------------------- | -------------------------------------------------------------- |
+| `ci`      | Every push                   | Format, lint and tests on macOS, Linux and Windows             |
+| `e2e`     | Release tags, weekly, manual | Patches a real Spotify on each OS and checks the UI loads      |
+| `sync`    | Weekly, manual               | Pulls the newest SpotX-Bash and opens a pull request           |
+| `release` | Release tags                 | Builds the six binaries `spotiflow.cmd` downloads              |
 
 ## Credits
 
