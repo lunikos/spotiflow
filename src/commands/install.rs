@@ -11,6 +11,7 @@ use crate::ver::Ver;
 use crate::{patch, upstream, Result};
 
 const IDLE_JS: &str = include_str!("../../assets/js/idle.js");
+const EQUALISER: &[u8] = include_bytes!("../../assets/images/equaliser-animated-green.gif");
 
 pub const MIN: Ver = Ver([1, 3, 0, 0]);
 
@@ -83,6 +84,11 @@ pub fn run(o: &Opts) -> Result<()> {
     }
     // Scroll-linked animations keep the compositor drawing every frame; idle.js pauses them at rest.
     ui.append(js, IDLE_JS)?;
+    // Spotify's 33 fps equaliser GIF re-rasterises its layer every frame; this copy runs at 11 fps.
+    let eq = ui.path("images/equaliser-animated-green.gif");
+    if eq.is_file() {
+        fs::write(eq, EQUALISER)?;
+    }
     ui.append(js, MARKER)?;
     if !o.no_theme {
         say("Adding theme");
