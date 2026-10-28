@@ -6,7 +6,7 @@
 :;   os=$(uname -s | sed 's/Darwin/macos/;s/Linux/linux/'); arch=$(uname -m | sed 's/aarch64/arm64/;s/amd64/x86_64/')
 :;   dir=${XDG_CACHE_HOME:-$HOME/.cache}/spotiflow; bin="$dir/spotiflow"; mkdir -p "$dir"
 :;   if [ ! -x "$bin" ]; then
-:;     curl -fsSL -o "$bin" "https://github.com/$repo/releases/latest/download/spotiflow-$os-$arch" && chmod +x "$bin"
+:;     curl -fsSL -o "$bin" "https://github.com/$repo/releases/latest/download/spotiflow-$os-$arch" || { rm -f "$bin"; echo "No spotiflow release for $os-$arch yet" >&2; exit 1; }; chmod +x "$bin"
 :;   fi
 :; fi
 :; exec "$bin" "$@"
