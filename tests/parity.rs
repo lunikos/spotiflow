@@ -5,11 +5,19 @@ use std::process::Command;
 
 use spotiflow::bundle::snapshot;
 use spotiflow::bundle::Unpacked;
-use spotiflow::patch::{self, Patch};
+use spotiflow::patch::{self, Group, Patch, Target};
 use spotiflow::platform::Os;
 use spotiflow::ver::Ver;
 
-const GROUPS: &[&str] = &["ao", "na", "free", "exp", "premium", "pod", "updates"];
+const GROUPS: &[Group] = &[
+    Group::Ads,
+    Group::NoAds,
+    Group::Free,
+    Group::Experiments,
+    Group::PremiumExperiments,
+    Group::Podcasts,
+    Group::Updates,
+];
 
 fn perl(file: &Path, p: &Patch) {
     let prog = format!("s&{}&{}&{}", p.regex, p.replace, p.flags);
@@ -22,13 +30,14 @@ fn perl(file: &Path, p: &Patch) {
     assert!(ok, "perl failed on {}", p.name);
 }
 
-fn check(input: &[u8], kind: &str, os: Os, arch: &str, ver: Ver) -> (usize, Vec<&'static str>) {
-    let tmp = std::env::temp_dir().join(format!("spotiflow-parity-{kind}"));
+fn check(input: &[u8], kind: Target, os: Os, arch: &str, ver: Ver) -> (usize, Vec<&'static str>) {
+    let tmp = std::env::temp_dir().join(format!("spotiflow-parity-{kind:?}"));
     fs::write(&tmp, input).unwrap();
     let (mut ours, mut n, mut missed) = (input.to_vec(), 0, Vec::new());
     for p in patch::table()
+        .unwrap()
         .into_iter()
-        .filter(|p| p.file == kind || (kind == "xpuiJs" && p.file == "vendorXpuiJs"))
+        .filter(|p| p.target == kind)
     {
         if !p.applies(GROUPS, ver, os, arch) {
             continue;
@@ -39,7 +48,7 @@ fn check(input: &[u8], kind: &str, os: Os, arch: &str, ver: Ver) -> (usize, Vec<
         missed.extend(miss);
         assert!(
             fs::read(&tmp).unwrap() == ours,
-            "{kind}: output differs from Perl after patch {}",
+            "{kind:?}: output differs from Perl after patch {}",
             p.name
         );
         n += 1;
@@ -65,17 +74,23 @@ fn matches_perl_on_real_client() {
     snapshot::extract(Path::new(&var("PARITY_SNAPSHOT").unwrap()), &js).unwrap();
 
     let mut results = vec![
-        check(&fs::read(&js).unwrap(), "xpuiJs", os, &arch, ver),
+        check(&fs::read(&js).unwrap(), Target::Js, os, &arch, ver),
         check(
             &fs::read(ui.path("xpui-desktop-modals.js")).unwrap(),
-            "xpuiDesktopModalsJs",
+            Target::Modals,
             os,
             &arch,
             ver,
         ),
     ];
     if let Ok(bin) = var("PARITY_BIN") {
-        results.push(check(&fs::read(bin).unwrap(), "appBinary", os, &arch, ver));
+        results.push(check(
+            &fs::read(bin).unwrap(),
+            Target::Binary,
+            os,
+            &arch,
+            ver,
+        ));
     }
     let n: usize = results.iter().map(|r| r.0).sum();
     let missed: Vec<_> = results.into_iter().flat_map(|r| r.1).collect();

@@ -471,7 +471,7 @@ mod tests {
 
     #[test]
     fn whole_table_compiles() {
-        for p in crate::patch::table() {
+        for p in crate::patch::table().unwrap() {
             compile(p.regex, p.replace, p.flags).unwrap_or_else(|e| panic!("{}: {e}", p.name));
         }
     }

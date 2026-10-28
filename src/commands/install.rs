@@ -5,6 +5,7 @@ use super::{MARKER, THEME};
 use crate::bundle::snapshot;
 use crate::bundle::Unpacked;
 use crate::cli::{say, warn, Opts};
+use crate::patch::Group;
 use crate::platform::{bak, Client, Os};
 use crate::ver::Ver;
 use crate::{patch, upstream, Result};
@@ -45,23 +46,19 @@ pub fn run(o: &Opts) -> Result<()> {
         warn(&format!("Spotify {ver} is newer than {supported}, the newest the patch set supports; run: spotiflow update"));
     }
 
-    let mut groups = vec!["ao", "na"];
-    if !o.premium {
-        groups.push("free");
-    }
-    if !o.no_exp {
-        groups.push("exp");
-        if o.premium {
-            groups.push("premium");
-        }
-    }
-    if o.hide_podcasts {
-        groups.push("pod");
-    }
-    if o.block_updates {
-        groups.push("updates");
-    }
-    say(&format!("Patching Spotify {ver} ({})", groups.join(", ")));
+    let groups: Vec<Group> = [
+        (Group::Ads, true),
+        (Group::NoAds, true),
+        (Group::Free, !o.premium),
+        (Group::Experiments, !o.no_exp),
+        (Group::PremiumExperiments, o.premium && !o.no_exp),
+        (Group::Podcasts, o.hide_podcasts),
+        (Group::Updates, o.block_updates),
+    ]
+    .into_iter()
+    .filter_map(|(g, on)| on.then_some(g))
+    .collect();
+    say(&format!("Patching Spotify {ver} ({groups:?})"));
     let missed = patch::apply(
         &c,
         &groups,
