@@ -42,7 +42,7 @@ jobs:
             Linux) xvfb-run -a /usr/share/spotify/spotify --no-sandbox --remote-debugging-port=9222 & ;;
             Windows) "$APPDATA/Spotify/Spotify.exe" --remote-debugging-port=9222 & ;;
           esac
-          for i in $(seq 1 30); do
+          for _ in $(seq 1 30); do
             curl -fs localhost:9222/json | grep -q 'xpui.app.spotify.com' && { echo "UI loaded"; exit 0; }
             sleep 3
           done
