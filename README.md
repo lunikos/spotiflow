@@ -33,11 +33,16 @@ The first run fetches the right prebuilt binary through the [GitHub CLI](https:/
 (run `gh auth login` once first). If you've cloned the repo and have [Rust](https://rustup.rs),
 it builds from source instead.
 
+<details>
+<summary><b>Supported installs</b></summary>
+
 | Platform | Spotify it works with                                                         |
 | -------- | ----------------------------------------------------------------------------- |
 | macOS    | `/Applications/Spotify.app` or `~/Applications/Spotify.app`                   |
 | Windows  | The desktop installer's `%APPDATA%\Spotify` (not the Microsoft Store version) |
 | Linux    | The `.deb` or spotify-launcher install. Run with `sudo`. Flatpak and Snap are read-only, so they can't be patched |
+
+</details>
 
 ## Commands
 
@@ -50,6 +55,9 @@ it builds from source instead.
 | `update`    | Pull the latest SpotX patch set                                    |
 | `status`    | Show what's installed                                              |
 
+<details>
+<summary><b>Options</b></summary>
+
 | Option            | Use it to                                     |
 | ----------------- | --------------------------------------------- |
 | `--premium`       | Skip the ad patches on a paid account         |
@@ -59,6 +67,8 @@ it builds from source instead.
 | `--block-updates` | Stop Spotify updating itself (macOS, Windows) |
 | `--cache-mb <N>`  | Cap Spotify's disk cache at N MB              |
 | `-P <path>`       | Point at a Spotify install it can't find      |
+
+</details>
 
 ## Staying up to date
 
@@ -72,7 +82,8 @@ SpotX changes often. spotiflow keeps up in two ways:
 Patches inject code into Spotify. Updating trusts upstream SpotX exactly as much as running SpotX
 would.
 
-## How it works
+<details>
+<summary><b>How it works</b></summary>
 
 1. Find Spotify, close it, and back it up the first time (or restore that backup on later runs).
 2. Unpack `xpui.spa`, Spotify's web UI. Newer builds hide part of their code in the V8 snapshot,
@@ -97,7 +108,10 @@ src/
 assets/              patch data, theme, logo
 ```
 
-## Development
+</details>
+
+<details>
+<summary><b>Development and testing</b></summary>
 
 ```sh
 cargo test                      # unit tests
@@ -132,6 +146,8 @@ GitHub Actions run the rest:
 | `e2e`     | Release tags, weekly, manual | Patches a real Spotify on each OS and checks the UI loads      |
 | `sync`    | Weekly, manual               | Pulls the newest SpotX-Bash and opens a pull request           |
 | `release` | Release tags                 | Builds the six binaries `spotiflow.cmd` downloads              |
+
+</details>
 
 ## Credits
 
