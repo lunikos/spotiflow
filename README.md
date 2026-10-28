@@ -10,15 +10,19 @@
 
 ## Get started
 
-Download [`spotiflow.cmd`](spotiflow.cmd), then:
+macOS, Linux (add `sudo` before `sh` on Linux):
 
 ```sh
-sh spotiflow.cmd install        # macOS, Linux
-spotiflow.cmd install           # Windows
+curl -fsSL https://raw.githubusercontent.com/lunikos/spotiflow/main/spotiflow.cmd | sh -s install
 ```
 
-Re-run `install` after each Spotify update. Inside a clone with [Rust](https://rustup.rs)
-installed, it builds from source instead of downloading a release.
+Windows (PowerShell):
+
+```powershell
+curl.exe -fsSLo "$env:TEMP\spotiflow.cmd" https://raw.githubusercontent.com/lunikos/spotiflow/main/spotiflow.cmd; & "$env:TEMP\spotiflow.cmd" install
+```
+
+Run it again after each Spotify update, with `uninstall` in place of `install` to undo.
 
 <details>
 <summary><b>Supported installs</b></summary>
