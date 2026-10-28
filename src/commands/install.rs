@@ -10,6 +10,8 @@ use crate::platform::{bak, Client, Os};
 use crate::ver::Ver;
 use crate::{patch, upstream, Result};
 
+const IDLE_JS: &str = include_str!("../../assets/js/idle.js");
+
 pub const MIN: Ver = Ver([1, 3, 0, 0]);
 
 pub fn run(o: &Opts) -> Result<()> {
@@ -79,6 +81,8 @@ pub fn run(o: &Opts) -> Result<()> {
     if o.hide_podcasts {
         ui.append(css, upstream::data().podcasts_css)?;
     }
+    // Scroll-linked animations keep the compositor drawing every frame; idle.js pauses them at rest.
+    ui.append(js, IDLE_JS)?;
     ui.append(js, MARKER)?;
     if !o.no_theme {
         say("Adding theme");
