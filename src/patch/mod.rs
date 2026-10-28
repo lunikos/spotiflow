@@ -2,6 +2,7 @@
 //! `group&name&regex&replacement&flags&file&min&max&platform&arch&count`
 
 mod translate;
+pub mod windows;
 
 use std::collections::BTreeMap;
 use std::fs;
