@@ -7,7 +7,15 @@ permissions:
   contents: write
 
 jobs:
+  create:
+    runs-on: ubuntu-latest
+    steps:
+      - run: gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+
   build:
+    needs: create
     strategy:
       matrix:
         include:
@@ -31,6 +39,6 @@ jobs:
           src=target/${{ matrix.target }}/release/spotiflow
           [ -f "$src.exe" ] && src="$src.exe"
           cp "$src" "${{ matrix.asset }}"
-          gh release upload "$GITHUB_REF_NAME" "${{ matrix.asset }}" --clobber || gh release create "$GITHUB_REF_NAME" "${{ matrix.asset }}" --generate-notes
+          gh release upload "$GITHUB_REF_NAME" "${{ matrix.asset }}" --clobber
         env:
           GH_TOKEN: ${{ github.token }}
