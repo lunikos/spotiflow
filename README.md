@@ -5,7 +5,8 @@
 <h1 align="center">spotiflow</h1>
 
 <p align="center">
-  <a href="https://github.com/SpotX-Official/SpotX">SpotX</a> patches for the Spotify desktop app on macOS, Linux and Windows.
+  Ad-free, decluttered and lighter Spotify desktop app for macOS, Linux and Windows.<br>
+  Built on <a href="https://github.com/SpotX-Official/SpotX">SpotX</a>, with its own theme and CPU fixes.
 </p>
 
 ## Get started
