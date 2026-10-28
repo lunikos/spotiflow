@@ -47,7 +47,7 @@ pub fn run(o: &Opts) -> Result<()> {
 
     let path = match os {
         Os::Mac => install_mac(&file, &work, o.path.as_deref())?,
-        _ => install_windows(&file)?,
+        _ => install_windows(&file, &work, o.path.as_deref())?,
     };
     let _ = fs::remove_dir_all(&work);
     super::install::run(&Opts { path, ..o.clone() })
@@ -82,32 +82,38 @@ fn install_mac(tbz: &Path, work: &Path, dest: Option<&str>) -> Result<Option<Str
     {
         return Err("the download isn't signed by Spotify; not installing it".into());
     }
+    swap(&staged, &dest, &work.join("Spotify.old.app"))
+}
+
+fn install_windows(exe: &Path, work: &Path, dest: Option<&str>) -> Result<Option<String>> {
+    let appdata = std::env::var_os("APPDATA").ok_or("APPDATA is not set")?;
+    let dest = dest.map_or_else(|| PathBuf::from(appdata).join("Spotify"), PathBuf::from);
+    let staged = work.join("client");
+    output(
+        Command::new(exe).arg("/extract").arg(&staged),
+        "Spotify installer",
+    )?;
+    if !apps_dir(&staged).join("xpui.spa").is_file() {
+        return Err("the installer didn't produce a Spotify client".into());
+    }
+    swap(&staged, &dest, &work.join("old"))
+}
+
+fn swap(staged: &Path, dest: &Path, old: &Path) -> Result<Option<String>> {
     if let Ok(c) = Client::find(Some(&dest.to_string_lossy())) {
         c.quit();
     }
-    let old = work.join("Spotify.old.app");
     if dest.exists() {
-        fs::rename(&dest, &old).or_else(|_| {
-            output(Command::new("mv").arg(&dest).arg(&old), "move old client").map(drop)
-        })?;
+        fs::rename(dest, old).map_err(|e| format!("couldn't move the old client aside: {e}"))?;
     }
-    if fs::rename(&staged, &dest).is_err()
-        && output(Command::new("ditto").arg(&staged).arg(&dest), "copy").is_err()
-    {
-        let _ = fs::rename(&old, &dest);
-        return Err("couldn't install the new client; the old one was put back".into());
+    if let Err(e) = fs::rename(staged, dest) {
+        let _ = fs::rename(old, dest);
+        return Err(
+            format!("couldn't install the new client ({e}); the old one was put back").into(),
+        );
     }
     say(&format!("Installed {}", dest.display()));
     Ok(Some(dest.to_string_lossy().into_owned()))
-}
-
-fn install_windows(exe: &Path) -> Result<Option<String>> {
-    if let Ok(c) = Client::find(None) {
-        c.quit();
-    }
-    output(Command::new(exe).arg("/silent"), "Spotify installer")?;
-    say("Installed Spotify");
-    Ok(None)
 }
 
 fn output(cmd: &mut Command, what: &str) -> Result<Vec<u8>> {
