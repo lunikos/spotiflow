@@ -1,5 +1,3 @@
-//! Finds the installed Spotify client and hides per-OS differences (paths, quitting, signing).
-
 mod linux;
 mod macos;
 mod windows;
@@ -27,7 +25,6 @@ impl Os {
         }
     }
 
-    /// Matches the platform names used in the patch table.
     pub fn name(self) -> &'static str {
         match self {
             Os::Mac => "macOS",
@@ -37,7 +34,6 @@ impl Os {
     }
 }
 
-/// One installed Spotify client and the files spotiflow touches.
 pub struct Client {
     pub os: Os,
     pub root: PathBuf,
@@ -90,8 +86,6 @@ impl Client {
         bak(&self.bin)
     }
 
-    /// The binaries backed up and restored alongside xpui.spa. Windows patches Spotify.dll and
-    /// chrome_elf.dll too, and strips Spotify.exe's signature, so all three are preserved.
     pub fn bins(&self) -> Vec<PathBuf> {
         if self.os == Os::Windows {
             ["Spotify.exe", "Spotify.dll", "chrome_elf.dll"]
@@ -149,7 +143,6 @@ pub fn home() -> PathBuf {
     )
 }
 
-/// The `.bak` sibling of a path.
 pub fn bak(p: &std::path::Path) -> PathBuf {
     let mut name = p.file_name().unwrap_or_default().to_os_string();
     name.push(".bak");

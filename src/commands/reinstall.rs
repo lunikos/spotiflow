@@ -74,6 +74,7 @@ fn install_mac(tbz: &Path, work: &Path, dest: Option<&str>) -> Result<Option<Str
             .arg(&staged),
         "signature check",
     )?;
+    // The mirror is third-party, so only accept an app Spotify itself signed.
     let info = Command::new("codesign")
         .args(["-dv"])
         .arg(&staged)

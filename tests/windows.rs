@@ -1,10 +1,3 @@
-//! Checks the Rust Windows binary patcher against SpotX's own output, byte for byte, on real
-//! Spotify.dll/.exe/chrome_elf.dll (1.3.6.1921). Each env var points at a directory holding the
-//! three pristine PE files:
-//!   SPOTIFLOW_WIN_X64=/path/x64 SPOTIFLOW_WIN_ARM64=/path/arm64 \
-//!     cargo test --release --test windows -- --ignored
-//! The expected hashes were produced by running SpotX's run.ps1 patch functions under PowerShell.
-
 use std::fs;
 use std::path::Path;
 
@@ -13,7 +6,6 @@ use spotiflow::ver::Ver;
 
 const VER: Ver = Ver([1, 3, 6, 1921]);
 
-// (pristine env dir, expected non-premium dll/exe/chrome, expected premium dll)
 struct Case {
     env: &'static str,
     dll: &'static str,
@@ -64,7 +56,6 @@ fn matches_spotx() {
         };
         let src = Path::new(&src);
 
-        // Non-premium: all patches.
         let dir = stage(src, "free");
         let missed = patch_windows(&dir, VER, false, true).unwrap();
         assert!(missed.is_empty(), "{}: unexpected misses {missed:?}", c.env);
@@ -76,12 +67,10 @@ fn matches_spotx() {
             c.env
         );
 
-        // Re-running on the patched client must be a no-op (SpotX "Patched" state).
         patch_windows(&dir, VER, false, true).unwrap();
         assert_eq!(hashes(&dir), got, "{} re-run changed bytes", c.env);
         fs::remove_dir_all(&dir).unwrap();
 
-        // Premium: skips block_slots and crossfade; signatures and regex still applied.
         let dir = stage(src, "premium");
         patch_windows(&dir, VER, true, true).unwrap();
         let (dll, exe, chrome) = hashes(&dir);
@@ -103,7 +92,6 @@ fn matches_spotx() {
     println!("{ran} architecture(s) matched SpotX exactly");
 }
 
-// Minimal SHA-256 (self-contained; avoids a dependency for the parity check).
 fn sha256(data: &[u8]) -> String {
     const K: [u32; 64] = [
         0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4,

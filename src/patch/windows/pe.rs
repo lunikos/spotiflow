@@ -1,6 +1,3 @@
-//! PE reader and byte scanners for the Spotify.dll locators (SpotX Get-PEFileInfo /
-//! BinaryScannerV3). Offsets/RVAs are i64 to match the PowerShell arithmetic.
-
 use crate::Result;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -113,7 +110,6 @@ impl Pe {
         })
     }
 
-    /// Get-PERvaFromOffset.
     pub fn rva_from_off(&self, off: i64) -> Option<i64> {
         for s in &self.sections {
             if off >= s.rptr && off < s.rptr + s.rsize {
@@ -123,7 +119,6 @@ impl Pe {
         None
     }
 
-    /// Get-PEOffsetFromRva.
     pub fn off_from_rva(&self, rva: i64) -> Option<i64> {
         for s in &self.sections {
             let span = s.vsize.max(s.rsize);
@@ -143,7 +138,6 @@ impl Pe {
         self.code.vaddr + self.code.vsize.max(self.code.rsize)
     }
 
-    /// Get-BinaryPatchContext: validate the exception table geometry for this arch.
     pub fn context(&self) -> Result<()> {
         let unit = if self.arch == Arch::Arm64 { 8 } else { 12 };
         if self.exc_rawsize < unit || self.exc_rawsize % unit != 0 {
@@ -153,8 +147,6 @@ impl Pe {
     }
 }
 
-/// Zero the certificate-table data-directory entry (Remove-Sign). Returns true if the file is a
-/// valid PE that was already unsigned or has been stripped.
 pub fn remove_sign(bytes: &mut [u8]) -> Result<bool> {
     let pe = Pe::parse(bytes)?;
     let entry = pe.opt_off + pe.data_dir_off + 4 * 8;
@@ -167,8 +159,6 @@ pub fn remove_sign(bytes: &mut [u8]) -> Result<bool> {
     bytes[entry..entry + 8].fill(0);
     Ok(true)
 }
-
-// --- BinaryScannerV3 ---
 
 pub fn find_bytes(data: &[u8], pat: &[u8], start: i64) -> i64 {
     if pat.is_empty() {
@@ -233,7 +223,6 @@ fn rva_to_off(rva: i64, pe: &Pe) -> i64 {
     -1
 }
 
-/// FindRipLeaRefs: `lea reg, [rip+disp]` targeting a given RVA, within the code section.
 pub fn find_rip_lea_refs(
     bytes: &[u8],
     start: i64,
@@ -258,7 +247,6 @@ pub fn find_rip_lea_refs(
     out
 }
 
-/// FindXrefArm64: ADRP+ADD pair resolving to a given RVA.
 pub fn find_xref_arm64(
     bytes: &[u8],
     string_rva: u64,
@@ -303,7 +291,6 @@ pub fn find_xref_arm64(
     out
 }
 
-/// FindFunctionRange (x64 .pdata: 12-byte RUNTIME_FUNCTION).
 pub fn find_function_range(
     bytes: &[u8],
     rf_ptr: i64,
@@ -341,7 +328,6 @@ pub fn find_function_range(
     }
 }
 
-/// FindArm64FunctionRange (ARM64 .pdata: 8-byte entries with packed/unpacked unwind).
 pub fn find_arm64_function_range(
     bytes: &[u8],
     rf_ptr: i64,
@@ -403,7 +389,6 @@ pub fn find_arm64_function_range(
     }
 }
 
-/// FindCrossfadeGateCallsToRva: `call rel32` to a target RVA immediately followed by a `mov [..], al`.
 pub fn find_gate_calls_to_rva(
     bytes: &[u8],
     start: i64,
@@ -429,7 +414,6 @@ pub fn find_gate_calls_to_rva(
     out
 }
 
-/// FindArm64BlockSlotsCallers: BL; TBNZ w0,#0; MOV w1,#enum.
 pub fn find_arm64_block_slots_callers(
     bytes: &[u8],
     start: i64,
@@ -460,7 +444,6 @@ pub fn find_arm64_block_slots_callers(
     out
 }
 
-/// ASCII anchor that must occur exactly once; returns (offset, rva).
 pub fn unique_anchor(
     bytes: &[u8],
     pe: &Pe,
@@ -481,7 +464,6 @@ pub fn unique_anchor(
     Ok((off, rva))
 }
 
-/// The function range containing an RVA, per arch.
 pub fn func_range(bytes: &[u8], pe: &Pe, rva: i64) -> Option<(i64, i64)> {
     match pe.arch {
         Arch::X64 => find_function_range(

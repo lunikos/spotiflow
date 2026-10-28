@@ -1,6 +1,3 @@
-//! Patch table from SpotX-Bash (see `upstream`), one record per line:
-//! `group&name&regex&replacement&flags&file&min&max&platform&arch&count`
-
 mod translate;
 pub mod windows;
 
@@ -45,7 +42,6 @@ pub struct Patch {
 
 const ABOUT: &str = concat!("$1\"", include_str!("../../assets/about.html"), "\"");
 
-/// Upstream's About-dialog patch keeps its pattern but shows spotiflow's text.
 pub fn table() -> Result<Vec<Patch>> {
     let mut patches = parse(crate::upstream::data().patches)?;
     for p in patches.iter_mut().filter(|p| p.name == "aboutSpotX") {
@@ -54,7 +50,6 @@ pub fn table() -> Result<Vec<Patch>> {
     Ok(patches)
 }
 
-/// Fails if any record won't compile, so a bad upstream update is never cached.
 pub fn validate(table: &'static str) -> Result<usize> {
     let patches = parse(table)?;
     for p in &patches {
@@ -105,6 +100,7 @@ fn parse(table: &'static str) -> Result<Vec<Patch>> {
 
 impl Patch {
     pub fn applies(&self, groups: &[Group], ver: Ver, os: Os, arch: &str) -> bool {
+        // Windows binaries are handled by patch::windows; these records target macOS and Linux.
         (os != Os::Windows || self.target != Target::Binary)
             && groups.contains(&self.group)
             && self.min.is_none_or(|m| ver >= m)
@@ -114,7 +110,6 @@ impl Patch {
     }
 }
 
-/// Applies the selected patches file by file. Returns the names that matched nothing.
 pub fn apply(
     client: &Client,
     groups: &[Group],
@@ -147,7 +142,6 @@ pub fn apply(
     Ok(missed)
 }
 
-/// Byte-level entry point, used by the parity test against Perl.
 pub fn apply_bytes(bytes: &[u8], patches: &[Patch]) -> Result<(Vec<u8>, Vec<&'static str>)> {
     let (text, missed) = apply_to(translate::latin1(bytes), patches)?;
     Ok((translate::unlatin1(&text)?, missed))

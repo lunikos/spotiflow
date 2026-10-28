@@ -50,6 +50,7 @@ pub fn data() -> &'static Data {
         ])
         .expect("assets/patches/source.txt holds '<commit> <client>'");
         load(&cache_dir())
+            // A cache older than the embedded data is stale.
             .filter(|c| c.supported() >= embedded.supported())
             .unwrap_or(embedded)
     })

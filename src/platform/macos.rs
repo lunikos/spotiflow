@@ -27,6 +27,8 @@ pub fn quit() {
     run_quietly("pkill", &["-x", "Spotify"]);
 }
 
+// macOS seals bundle resources, so any edit needs an ad hoc re-sign.
+
 pub fn resign(root: &Path) -> Result<()> {
     let ok = Command::new("codesign")
         .args(["-f", "--deep", "-s", "-"])

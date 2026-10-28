@@ -7,6 +7,7 @@ pub struct Compiled {
     regex: Regex,
     replace: String,
     all: bool,
+    // Lookarounds make fancy-regex backtrack; a cheap finder proposes starts, the anchored regex confirms.
     prefilter: Option<(Finder, Regex)>,
     window: Option<usize>,
 }
@@ -64,6 +65,8 @@ impl Compiled {
         Ok(Some(out))
     }
 }
+
+// Perl reads these files as bytes; one char per byte keeps every match byte-identical.
 
 pub fn latin1(bytes: &[u8]) -> String {
     bytes.iter().map(|&b| b as char).collect()

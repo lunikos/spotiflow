@@ -10,7 +10,6 @@ pub fn candidates() -> Vec<PathBuf> {
         .collect()
 }
 
-/// The version comes from xpui itself (see commands::install), since Spotify.exe has no plain-text one.
 pub fn layout(root: &Path) -> (PathBuf, PathBuf, &'static str, Option<Ver>) {
     let arm = root.join("v8_context_snapshot.arm64.bin");
     let snapshot = if arm.is_file() {

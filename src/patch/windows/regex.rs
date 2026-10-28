@@ -1,7 +1,3 @@
-//! Windows Spotify.dll regex patches from SpotX's patches.json `others.binary`.
-//! SpotX decodes the DLL as Windows-1251; the patterns/replacements are ASCII, so Latin-1
-//! (translate.rs) gives byte-identical output. Table: name&match&replace&fr&to&kind.
-
 use super::super::translate::{self, latin1, unlatin1};
 use crate::ver::Ver;
 use crate::Result;
@@ -35,7 +31,6 @@ fn table() -> Vec<Entry> {
         .collect()
 }
 
-/// Test-PatchVersionMatch: compare on the first three version components.
 fn version_match(e: &Entry, ver: Ver) -> bool {
     let v = Ver([ver.0[0], ver.0[1], ver.0[2], 0]);
     let fr_ok = e.fr.map(|fr| fr <= v).unwrap_or(false);
@@ -43,7 +38,6 @@ fn version_match(e: &Entry, ver: Ver) -> bool {
     fr_ok && to_ok
 }
 
-/// Applies matching patches in place; returns the names that matched nothing.
 pub fn apply(
     bytes: &mut Vec<u8>,
     ver: Ver,
@@ -62,7 +56,6 @@ pub fn apply(
         if !version_match(&e, ver) {
             continue;
         }
-        // .NET `-replace` is global; reuse the translator's literal prefilter for speed.
         let mut hit = false;
         for c in translate::compile(e.find, e.replace, "g")
             .map_err(|err| format!("binary patch {}: {err}", e.name))?

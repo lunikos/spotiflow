@@ -1,5 +1,3 @@
-//! x64 instruction decoding and the x64 Spotify.dll locators (SpotX run.ps1).
-
 use std::collections::HashMap;
 
 use super::pe::*;
@@ -33,7 +31,6 @@ enum JKind {
     Jmp,
 }
 
-/// Read-X64RelativeBranch -> (next_offset, target_offset).
 fn rel_branch(b: &[u8], off: i64, kind: JKind, limit: i64) -> Result<(i64, i64)> {
     let (short, near): (u8, Option<u8>) = match kind {
         JKind::Je => (0x74, Some(0x84)),
@@ -62,7 +59,6 @@ enum Field {
     CmpRdiBl,
 }
 
-/// Read-X64BlockSlotsField -> next offset (the field value itself is unused by the locator).
 fn field_next(b: &[u8], off: i64, kind: Field) -> Result<i64> {
     let (d8, d32): (&[u8], &[u8]) = match kind {
         Field::CmpRcxBl => (&[0x38, 0x59], &[0x38, 0x99]),
@@ -84,7 +80,6 @@ fn dedup(mut v: Vec<i64>) -> Vec<i64> {
     v
 }
 
-// --- reset_dll_sign (x64) ---
 pub fn reset_dll_sign(bytes: &[u8], pe: &Pe) -> Result<Vec<Loc>> {
     pe.context()?;
     let (_, anchor_rva) = unique_anchor(
@@ -150,7 +145,6 @@ pub fn reset_dll_sign(bytes: &[u8], pe: &Pe) -> Result<Vec<Loc>> {
     Ok(vec![loc])
 }
 
-// --- block_slots (x64) ---
 fn seq_enum(b: &[u8], seq_off: i64, branch_off: i64, match_taken: bool) -> Vec<u32> {
     let mov = hex("41 8B C8");
     if !match_bytes(b, seq_off, &mov) {
@@ -274,7 +268,6 @@ fn mapper_enum_value(b: &[u8], pe: &Pe, start_rva: i64, end_rva: i64, refs: &[i6
             if case_off < mapper_off || !match_masked(b, case_off, &case.pattern, &case.mask) {
                 continue;
             }
-            // (offset, branch_on_equal, match_taken)
             let mut dispatches: Vec<(i64, bool, bool)> = Vec::new();
             if case.target_mode {
                 let mut bo = mapper_off;
@@ -608,7 +601,6 @@ pub fn block_slots(bytes: &[u8], pe: &Pe) -> Result<Vec<Loc>> {
     Ok(targets.into_values().collect())
 }
 
-// --- crossfade_enabled (x64) ---
 pub fn crossfade(bytes: &[u8], pe: &Pe) -> Result<Vec<Loc>> {
     pe.context()?;
     let (_, anchor_rva) = unique_anchor(bytes, pe, "crossfade_enabled", true)?;
@@ -727,7 +719,6 @@ pub fn crossfade(bytes: &[u8], pe: &Pe) -> Result<Vec<Loc>> {
     Ok(vec![loc])
 }
 
-// --- ListPlayer (x64), only >= 1.2.98 ---
 pub fn list_player(bytes: &[u8], pe: &Pe) -> Result<Vec<Loc>> {
     pe.context()?;
     let (_, anchor_rva) = unique_anchor(bytes, pe, "enable_list_player", true)?;

@@ -1,5 +1,3 @@
-//! ARM64 instruction decoding and the ARM64 Spotify.dll locators (SpotX run.ps1).
-
 use super::pe::*;
 use super::Loc;
 use crate::Result;
@@ -86,7 +84,6 @@ pub fn adrp_page_rva(ownerpage: u32, inst_rva: i64) -> i64 {
     (inst_rva & -4096i64) + (signed_imm(imm, 21) << 12)
 }
 
-// --- reset_dll_sign (ARM64 half) ---
 pub fn reset_dll_sign(bytes: &[u8], pe: &Pe) -> Result<Vec<Loc>> {
     pe.context()?;
     let (_, anchor_rva) = unique_anchor(
@@ -159,7 +156,6 @@ fn dedup(mut v: Vec<i64>) -> Vec<i64> {
     v
 }
 
-// --- block_slots (ARM64) ---
 fn mapper_enum_value(
     bytes: &[u8],
     pe: &Pe,
@@ -175,7 +171,7 @@ fn mapper_enum_value(
         return Err("slot_is_disabled mapper range is invalid".into());
     }
     let search_end = (mapper_off + 0x80).min(mapper_end - 28);
-    let mut dispatchers: Vec<(i64, i64, i64)> = Vec::new(); // (enum_limit, table_rva, base_rva)
+    let mut dispatchers: Vec<(i64, i64, i64)> = Vec::new();
     let mut off = mapper_off;
     while off <= search_end {
         let cmp = read_inst(bytes, off)?;
@@ -395,7 +391,6 @@ pub fn block_slots(bytes: &[u8], pe: &Pe) -> Result<Vec<Loc>> {
     Ok(targets.into_values().collect())
 }
 
-// --- crossfade_enabled (ARM64) ---
 pub fn crossfade(bytes: &[u8], pe: &Pe) -> Result<Vec<Loc>> {
     pe.context()?;
     let (_, anchor_rva) = unique_anchor(bytes, pe, "crossfade_enabled", true)?;
@@ -508,7 +503,6 @@ pub fn crossfade(bytes: &[u8], pe: &Pe) -> Result<Vec<Loc>> {
     Ok(candidates.into_values().collect())
 }
 
-// --- ListPlayer (ARM64), only >= 1.2.98 ---
 pub fn list_player(bytes: &[u8], pe: &Pe) -> Result<Vec<Loc>> {
     pe.context()?;
     let (_, anchor_rva) = unique_anchor(bytes, pe, "enable_list_player", true)?;

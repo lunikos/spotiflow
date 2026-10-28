@@ -1,5 +1,3 @@
-//! Windows Spotify.dll machine-code patches, ported from SpotX (run.ps1, clients >= 1.2.70.253).
-
 mod arm64;
 mod pe;
 mod regex;
@@ -12,7 +10,6 @@ use crate::ver::Ver;
 use crate::Result;
 use pe::{Arch, Pe};
 
-/// `original` is None when the location is already patched.
 pub struct Loc {
     pub patch_off: i64,
     pub original: Option<Vec<u8>>,
@@ -24,7 +21,6 @@ const BLOCK_SLOTS_MIN: Ver = Ver([1, 2, 94, 0]);
 const CROSSFADE_MIN: Ver = Ver([1, 2, 89, 0]);
 const LIST_PLAYER_MIN: Ver = Ver([1, 2, 98, 0]);
 
-/// SpotX Invoke-VerifiedBinaryPatch: validate then apply; false = already patched (no-op).
 fn apply_locs(bytes: &mut [u8], name: &str, mut locs: Vec<Loc>) -> Result<bool> {
     if locs.is_empty() {
         return Err(format!("No {name} patch locations were found").into());
@@ -94,7 +90,6 @@ fn crossfade(bytes: &[u8], pe: &Pe, ver: Ver) -> Result<Vec<Loc>> {
     Ok(locs)
 }
 
-/// Locator errors are non-fatal (SpotX warns and continues): report as a missed patch.
 fn run_pe(
     bytes: &mut [u8],
     name: &'static str,
@@ -109,8 +104,6 @@ fn run_pe(
     }
 }
 
-/// Patches Spotify.dll and strips signatures from the three PE files in place, like SpotX-Windows.
-/// Returns the names of patches that did not apply.
 pub fn patch_windows(
     root: &Path,
     ver: Ver,
@@ -123,12 +116,10 @@ pub fn patch_windows(
     let dll = root.join("Spotify.dll");
     let mut bytes = fs::read(&dll)?;
 
-    // 1. Disable the DLL signature check (fatal on failure, like SpotX's Stop-Script).
     let pe = Pe::parse(&bytes)?;
     let locs = reset_dll_sign(&bytes, &pe)?;
     apply_locs(&mut bytes, "reset_dll_sign", locs)?;
 
-    // 2. Strip the Authenticode certificate table from all three PE files.
     pe::remove_sign(&mut bytes)?;
     for name in ["Spotify.exe", "chrome_elf.dll"] {
         let path = root.join(name);
@@ -137,10 +128,8 @@ pub fn patch_windows(
         fs::write(&path, &b)?;
     }
 
-    // 3. Regex binary patches (block_update / block_slots* / block_gabo*).
     let mut missed = regex::apply(&mut bytes, ver, premium, block_updates)?;
 
-    // 4/5. Non-premium machine-code patches.
     if !premium && ver >= BLOCK_SLOTS_MIN {
         run_pe(&mut bytes, "block_slots", block_slots, &mut missed);
     }

@@ -103,7 +103,6 @@ pub fn run(o: &Opts) -> Result<()> {
     Ok(())
 }
 
-/// Every install starts from the untouched client: restore backups if present, else make them.
 fn fresh_base(c: &Client) -> Result<()> {
     if c.has_backup() {
         fs::copy(c.spa_bak(), c.spa())?;
@@ -135,7 +134,6 @@ fn contains(hay: &[u8], needle: &[u8]) -> bool {
     hay.windows(needle.len()).any(|w| w == needle)
 }
 
-/// Spicetify unpacks xpui.spa into Apps/xpui and drops other files; restore it, keeping our backup.
 fn undo_spicetify(c: &Client) -> Result<()> {
     if !c.apps.join("xpui").is_dir() {
         return Ok(());
@@ -158,7 +156,6 @@ fn undo_spicetify(c: &Client) -> Result<()> {
     Ok(())
 }
 
-/// Same lookup SpotX-Bash falls back to when the OS doesn't expose a version.
 fn version_from_js(js: &std::path::Path) -> Option<Ver> {
     let text = String::from_utf8_lossy(&fs::read(js).ok()?).into_owned();
     let re =
@@ -168,7 +165,8 @@ fn version_from_js(js: &std::path::Path) -> Option<Ver> {
     Ver::parse(caps.get(1)?.as_str())
 }
 
-/// Spotify reads storage.size (MB) from prefs and rewrites the file on exit, so it must be closed.
+// Spotify rewrites prefs on exit, so it must be closed first.
+
 fn cap_cache(c: &Client, mb: u32) -> Result<()> {
     let prefs = c.prefs();
     let Ok(text) = fs::read_to_string(&prefs) else {
