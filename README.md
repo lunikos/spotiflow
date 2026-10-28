@@ -73,6 +73,7 @@ Run it again after each Spotify update, with `uninstall` in place of `install` t
    and strip the signatures SpotX strips from `Spotify.exe` and `chrome_elf.dll`.
 4. Add a small script that pauses Spotify's scroll-linked animations when nothing scrolls. They
    otherwise keep the compositor drawing every frame (about 30% CPU while idle).
+   Spotify's 33 fps "now playing" equaliser GIF is also swapped for an 11 fps copy.
 5. Add the theme stylesheet, repack, and re-sign the app on macOS.
 
 The patch records keep SpotX-Bash's format and Perl regex syntax. A small translator turns them
