@@ -82,10 +82,6 @@ impl Client {
     pub fn spa_bak(&self) -> PathBuf {
         self.apps.join("xpui.bak")
     }
-    pub fn bin_bak(&self) -> PathBuf {
-        bak(&self.bin)
-    }
-
     pub fn bins(&self) -> Vec<PathBuf> {
         if self.os == Os::Windows {
             ["Spotify.exe", "Spotify.dll", "chrome_elf.dll"]
