@@ -5,7 +5,7 @@ use super::{MARKER, THEME};
 use crate::bundle::snapshot;
 use crate::bundle::Unpacked;
 use crate::cli::{say, warn, Opts};
-use crate::platform::Client;
+use crate::platform::{bak, Client, Os};
 use crate::ver::Ver;
 use crate::{patch, upstream, Result};
 
@@ -89,6 +89,12 @@ pub fn run(o: &Opts) -> Result<()> {
     }
     ui.save(&c.spa())?;
     c.resign()?;
+    if c.os == Os::Windows {
+        let wm = patch::windows::patch_windows(&c.root, ver, o.premium, o.block_updates)?;
+        if !wm.is_empty() {
+            warn(&format!("{} binary patches matched nothing: {}", wm.len(), wm.join(", ")));
+        }
+    }
     if let Some(mb) = o.cache_mb {
         cap_cache(&c, mb)?;
     }
@@ -100,8 +106,8 @@ pub fn run(o: &Opts) -> Result<()> {
 fn fresh_base(c: &Client) -> Result<()> {
     if c.has_backup() {
         fs::copy(c.spa_bak(), c.spa())?;
-        if c.bin_bak().is_file() {
-            fs::copy(c.bin_bak(), &c.bin)?;
+        for b in c.bins() {
+            fs::copy(bak(&b), &b)?;
         }
         return Ok(());
     }
@@ -109,7 +115,9 @@ fn fresh_base(c: &Client) -> Result<()> {
         return Err("Spotify is already patched (SpotX or spotiflow) but has no backup; reinstall Spotify (macOS: spotiflow reinstall)".into());
     }
     fs::copy(c.spa(), c.spa_bak())?;
-    fs::copy(&c.bin, c.bin_bak())?;
+    for b in c.bins() {
+        fs::copy(&b, bak(&b))?;
+    }
     Ok(())
 }
 

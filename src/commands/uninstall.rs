@@ -2,7 +2,7 @@ use std::fs;
 
 use crate::bundle::Unpacked;
 use crate::cli::{say, Opts};
-use crate::platform::Client;
+use crate::platform::{bak, Client};
 use crate::Result;
 
 pub fn run(o: &Opts) -> Result<()> {
@@ -21,8 +21,10 @@ pub fn run(o: &Opts) -> Result<()> {
         return Err("no backup found; reinstall Spotify to get a clean client".into());
     }
     fs::rename(c.spa_bak(), c.spa())?;
-    if c.bin_bak().is_file() {
-        fs::rename(c.bin_bak(), &c.bin)?;
+    for b in c.bins() {
+        if bak(&b).is_file() {
+            fs::rename(bak(&b), &b)?;
+        }
     }
     c.resign()?;
     say("Original Spotify restored.");

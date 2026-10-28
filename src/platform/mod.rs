@@ -87,14 +87,21 @@ impl Client {
         self.apps.join("xpui.bak")
     }
     pub fn bin_bak(&self) -> PathBuf {
-        let mut name = self.bin.file_name().unwrap_or_default().to_os_string();
-        name.push(".bak");
-        self.bin.with_file_name(name)
+        bak(&self.bin)
     }
 
-    /// Windows patches only touch xpui.spa, so only that backup is required there.
+    /// The binaries backed up and restored alongside xpui.spa. Windows patches Spotify.dll and
+    /// chrome_elf.dll too, and strips Spotify.exe's signature, so all three are preserved.
+    pub fn bins(&self) -> Vec<PathBuf> {
+        if self.os == Os::Windows {
+            ["Spotify.exe", "Spotify.dll", "chrome_elf.dll"].iter().map(|f| self.root.join(f)).collect()
+        } else {
+            vec![self.bin.clone()]
+        }
+    }
+
     pub fn has_backup(&self) -> bool {
-        self.spa_bak().is_file() && (self.os == Os::Windows || self.bin_bak().is_file())
+        self.spa_bak().is_file() && self.bins().iter().all(|b| bak(b).is_file())
     }
 
     pub fn quit(&self) {
@@ -137,6 +144,13 @@ pub fn home() -> PathBuf {
             .or_else(|| std::env::var_os("USERPROFILE"))
             .unwrap_or_default(),
     )
+}
+
+/// The `.bak` sibling of a path.
+pub fn bak(p: &std::path::Path) -> PathBuf {
+    let mut name = p.file_name().unwrap_or_default().to_os_string();
+    name.push(".bak");
+    p.with_file_name(name)
 }
 
 fn expand_home(p: &str) -> PathBuf {
