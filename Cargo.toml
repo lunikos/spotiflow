@@ -2,7 +2,7 @@
 name = "spotiflow"
 version = "0.1.0"
 edition = "2021"
-description = "Patch the Spotify desktop client (SpotX patch set) and apply a light theme"
+description = "SpotX patches for the Spotify desktop app"
 license = "MIT"
 
 [dependencies]
