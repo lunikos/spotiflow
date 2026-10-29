@@ -58,6 +58,7 @@ pub fn run(o: &Opts) -> Result<()> {
         (Group::Podcasts, o.hide_podcasts),
         (Group::Updates, o.block_updates),
         (Group::NoVideos, !o.videos),
+        (Group::Privacy, true),
     ]
     .into_iter()
     .filter_map(|(g, on)| on.then_some(g))

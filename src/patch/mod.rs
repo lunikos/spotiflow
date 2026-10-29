@@ -19,6 +19,7 @@ pub enum Group {
     Podcasts,
     Updates,
     NoVideos,
+    Privacy,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
@@ -78,6 +79,7 @@ fn parse(table: &'static str) -> Result<Vec<Patch>> {
                 "pod" => Group::Podcasts,
                 "updates" => Group::Updates,
                 "novideo" => Group::NoVideos,
+                "privacy" => Group::Privacy,
                 g => return Err(format!("patch {}: unknown group {g}", at(1)).into()),
             };
             let target = match at(5) {
@@ -177,7 +179,7 @@ mod tests {
     #[test]
     fn table_parses() {
         let t = table().unwrap();
-        assert_eq!(t.len(), 115);
+        assert_eq!(t.len(), 116);
         assert!(t.iter().all(|p| !p.name.is_empty() && !p.regex.is_empty()));
     }
 
