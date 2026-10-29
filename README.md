@@ -53,6 +53,7 @@ Run it again after each Spotify update, with `uninstall` in place of `install` t
 | `--no-exp`        | Leave experimental features off               |
 | `--hide-podcasts` | Hide podcasts and audiobooks on Home          |
 | `--block-updates` | Stop Spotify updating itself (macOS, Windows) |
+| `--videos`        | Keep music videos and Canvas (off by default)  |
 | `--cache-mb <N>`  | Cap Spotify's disk cache at N MB              |
 | `-P <path>`       | Point at a Spotify install it can't find      |
 
@@ -75,6 +76,7 @@ Run it again after each Spotify update, with `uninstall` in place of `install` t
 4. Add a small script that pauses Spotify's scroll-linked animations when nothing scrolls. They
    otherwise keep the compositor drawing every frame (about 30% CPU while idle).
    Spotify's 33 fps "now playing" equaliser GIF is also swapped for an 11 fps copy.
+   Music videos and Canvas are switched off: decoding them costs about 50% CPU and extra data.
 5. Add the theme stylesheet, repack, and re-sign the app on macOS.
 
 The patch records keep SpotX-Bash's format and Perl regex syntax. A small translator turns them
