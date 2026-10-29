@@ -18,6 +18,7 @@ pub enum Group {
     PremiumExperiments,
     Podcasts,
     Updates,
+    NoVideos,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
@@ -40,10 +41,12 @@ pub struct Patch {
     arch: &'static str,
 }
 
+const OWN: &str = include_str!("../../assets/patches/spotiflow.txt");
 const ABOUT: &str = concat!("$1\"", include_str!("../../assets/about.html"), "\"");
 
 pub fn table() -> Result<Vec<Patch>> {
     let mut patches = parse(crate::upstream::data().patches)?;
+    patches.extend(parse(OWN)?);
     for p in patches.iter_mut().filter(|p| p.name == "aboutSpotX") {
         p.replace = ABOUT;
     }
@@ -74,6 +77,7 @@ fn parse(table: &'static str) -> Result<Vec<Patch>> {
                 "premium" => Group::PremiumExperiments,
                 "pod" => Group::Podcasts,
                 "updates" => Group::Updates,
+                "novideo" => Group::NoVideos,
                 g => return Err(format!("patch {}: unknown group {g}", at(1)).into()),
             };
             let target = match at(5) {
@@ -173,7 +177,7 @@ mod tests {
     #[test]
     fn table_parses() {
         let t = table().unwrap();
-        assert_eq!(t.len(), 114);
+        assert_eq!(t.len(), 115);
         assert!(t.iter().all(|p| !p.name.is_empty() && !p.regex.is_empty()));
     }
 
