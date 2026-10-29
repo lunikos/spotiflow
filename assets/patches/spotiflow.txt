@@ -1,0 +1,1 @@
+novideo&noVideos&putOverridesValues\(\{pairs:\{\Kads:'0'&'music-video-disabled':'1','other-video-disabled':'1','canvas-disabled':'1',ads:'0'&&xpuiJs
