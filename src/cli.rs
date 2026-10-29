@@ -19,6 +19,7 @@ Options:
   --block-updates    block client auto-updates (macOS)
   --hide-podcasts    hide podcasts and audiobooks on Home
   --no-theme         install: patches only; uninstall: remove only the theme
+  --videos           keep music videos and Canvas (off by default to save CPU and data)
   --cache-mb <N>     cap Spotify's disk cache at N MB
 ";
 
@@ -32,6 +33,7 @@ pub struct Opts {
     pub no_theme: bool,
     pub cache_mb: Option<u32>,
     pub assets: bool,
+    pub videos: bool,
 }
 
 pub fn run(args: &[String]) -> Result<()> {
@@ -50,6 +52,7 @@ pub fn run(args: &[String]) -> Result<()> {
             "--hide-podcasts" => o.hide_podcasts = true,
             "--no-theme" => o.no_theme = true,
             "--assets" => o.assets = true,
+            "--videos" => o.videos = true,
             "--cache-mb" => {
                 o.cache_mb = Some(
                     it.next()
