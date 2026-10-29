@@ -79,7 +79,7 @@ Run it again after each Spotify update, with `uninstall` in place of `install` t
    Music videos and Canvas are switched off: decoding them costs about 50% CPU and extra data.
    Spotify's Widevine video module is then kept from loading, saving about 100 MB of RAM.
    Diagnostic telemetry (performance timings, A/B experiment reports, telemetry self-stats) is
-   dropped. Listening history, which Wrapped and recommendations use, is untouched.
+   dropped.
 5. Add the theme stylesheet, repack, and re-sign the app on macOS.
 
 The patch records keep SpotX-Bash's format and Perl regex syntax. A small translator turns them
