@@ -2,7 +2,7 @@ mod linux;
 mod macos;
 mod windows;
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::ver::Ver;
 use crate::Result;
@@ -114,6 +114,23 @@ impl Client {
         }
     }
 
+    // Where Spotify's browser keeps its data, including the Widevine module it downloads for video.
+    pub fn data_dir(&self) -> PathBuf {
+        match self.os {
+            Os::Mac => home().join("Library/Caches/com.spotify.client"),
+            Os::Linux => home().join(".cache/spotify"),
+            Os::Windows => std::env::var_os("LOCALAPPDATA")
+                .map_or_else(home, PathBuf::from)
+                .join("Spotify"),
+        }
+    }
+
+    /// A read-only file where Spotify downloads its Widevine module keeps the module, and its
+    /// process, from loading. Only video needs it.
+    pub fn block_widevine(&self, block: bool) -> Result<()> {
+        block_widevine(&self.data_dir(), block)
+    }
+
     pub fn prefs(&self) -> PathBuf {
         match self.os {
             Os::Mac => home().join("Library/Application Support/Spotify/prefs"),
@@ -121,6 +138,29 @@ impl Client {
             Os::Windows => self.root.join("prefs"),
         }
     }
+}
+
+fn block_widevine(dir: &Path, block: bool) -> Result<()> {
+    let path = dir.join("WidevineCdm");
+    if path.is_dir() {
+        if !block {
+            return Ok(());
+        }
+        std::fs::remove_dir_all(&path)?;
+    } else if path.is_file() {
+        let mut perms = std::fs::metadata(&path)?.permissions();
+        #[allow(clippy::permissions_set_readonly_false)]
+        perms.set_readonly(false);
+        std::fs::set_permissions(&path, perms)?;
+        std::fs::remove_file(&path)?;
+    }
+    if block && dir.is_dir() {
+        std::fs::write(&path, "")?;
+        let mut perms = std::fs::metadata(&path)?.permissions();
+        perms.set_readonly(true);
+        std::fs::set_permissions(&path, perms)?;
+    }
+    Ok(())
 }
 
 pub fn apps_dir(root: &std::path::Path) -> PathBuf {
@@ -162,4 +202,21 @@ fn host_arch() -> &'static str {
 
 fn run_quietly(cmd: &str, args: &[&str]) {
     let _ = std::process::Command::new(cmd).args(args).output();
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn widevine_block_round_trip() {
+        let dir = std::env::temp_dir().join(format!("spotiflow-wv-{}", std::process::id()));
+        std::fs::create_dir_all(dir.join("WidevineCdm/4.10")).unwrap();
+        super::block_widevine(&dir, false).unwrap();
+        assert!(dir.join("WidevineCdm").is_dir());
+        super::block_widevine(&dir, true).unwrap();
+        assert!(dir.join("WidevineCdm").is_file());
+        super::block_widevine(&dir, true).unwrap();
+        super::block_widevine(&dir, false).unwrap();
+        assert!(!dir.join("WidevineCdm").exists());
+        std::fs::remove_dir_all(dir).unwrap();
+    }
 }
