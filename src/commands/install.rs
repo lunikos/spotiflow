@@ -107,6 +107,7 @@ pub fn run(o: &Opts) -> Result<()> {
             ));
         }
     }
+    c.block_widevine(!o.videos)?;
     if let Some(mb) = o.cache_mb {
         cap_cache(&c, mb)?;
     }

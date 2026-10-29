@@ -26,6 +26,7 @@ pub fn run(o: &Opts) -> Result<()> {
             fs::rename(bak(&b), &b)?;
         }
     }
+    c.block_widevine(false)?;
     c.resign()?;
     say("Original Spotify restored.");
     Ok(())
